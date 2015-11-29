@@ -4,34 +4,25 @@ require 'optparse'
 require_relative '../lib/oracle'
 require_relative '../lib/dex-oracle/smali_input'
 
-def which(cmd)
-  exts = ENV['PATHEXT'] ? ENV['PATHEXT'].split(';') : ['']
-  ENV['PATH'].split(File::PATH_SEPARATOR).each do |path|
-    exts.each do |ext|
-      exe = File.join(path, "#{cmd}#{ext}")
-      return exe if File.executable?(exe) && !File.directory?(exe)
-    end
-  end
-  nil
-end
-
 options = {
     dir: '/data/local',
-    device_id: nil,
+    device_id: ENV['ANDROID_SERIAL'],
 }
 
 optparse = OptionParser.new do |opts|
-  opts.banner = "Usage #{File.basename($0)} [opts] <apk / dex / smali files>"
+  opts.banner = "Usage #{File.basename(__FILE__)} [opts] <apk / dex / smali files>"
   opts.on('-h', '--help', 'Display this screen') do
     puts opts
     exit
   end
 
-  opts.on('-d', '--dir DIR', "Writable device location to execute driver, default=\"#{options[:dir]}\"") do |dir|
+  opts.on('-d', '--dir DIR',
+    "Writable device location to execute driver, default=\"#{options[:dir]}\"") do |dir|
     options[:dir] = dir
   end
 
-  opts.on('-i', '--device-id DEV_ID', "Device ID for driver execution") do |id|
+  opts.on('-s', '--specific-device ANDROID_SERIAL',
+    "Device ID for driver execution, default=\"#{options[:device_id]}\"") do |id|
     options[:device_id] = id
   end
 end

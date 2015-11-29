@@ -1,3 +1,5 @@
+require 'logger'
+
 class Undexguard < Plugin
   CONST_NUMBER = 'const(?:\/\d+) [vp]\d+, (-?0x[a-f\d]+)'
   ESCAPE_STRING = '"(.*?)(?<!\\\\)"'
@@ -76,13 +78,15 @@ class Undexguard < Plugin
           MOVE_RESULT_OBJECT <<
           ')')
 
-  def process(smali_file)
+  def self.process(smali_file)
+    @@logger = Logger.new(STDOUT)
 
+    @@logger.debug("Undexguarding #{smali_file}")
   end
 
   private
 
-  def decrypt_string(method_body)
+  def self.decrypt_string(method_body)
 
   end
 end
