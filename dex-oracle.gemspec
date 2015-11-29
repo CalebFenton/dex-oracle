@@ -15,7 +15,7 @@ DexOracle is a pattern based Dalvik deobfuscator which uses limited execution to
 EOF
 
   dependencies = [
-#    [:runtime,     'mechanize',  '~> 2.7', '> 2.7.0'],
+    [:runtime, 'rubyzip'],
     [:development, 'rspec'],
     [:development, 'rspec-its'],
     [:development, 'rspec-mocks'],

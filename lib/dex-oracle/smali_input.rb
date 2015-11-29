@@ -1,3 +1,5 @@
+require 'zip'
+
 class SmaliInput
   attr_reader :temporary, :dir, :output
 
@@ -10,15 +12,24 @@ class SmaliInput
 
   def finish
     SmaliInput.repack(dir, output) unless @output.nil?
-    FileUtils.rm_rf(smali_input.dir) if @temporary
+    FileUtils.rm_rf(@dir) if @temporary
   end
 
   private
 
-  def repack(dir, output)
+  def self.repack(dir, output)
     raise 'Smali could not be found on the path.' if SmaliInput.which('smali').nil?
-    cmd = "smali #{dir} -o #{output}"
-    SmaliInput.run(cmd)
+    new_classes = Tempfile.new('oracledex')
+    begin
+      SmaliInput.run("smali #{dir} -o #{new_classes.path}")
+      Zip::File.open(output) do |zipfile|
+        zipfile.remove('classes.dex')
+        zipfile.add('classes.dex', new_classes.path)
+      end
+    ensure
+      new_classes.close
+      new_classes.unlink
+    end
   end
 
   def unpack(input)
@@ -32,7 +43,7 @@ class SmaliInput
     case magic
     when PK_ZIP_MAGIC, DEX_MAGIC
       @temporary = true
-      @output = "#{File.basename(input)}_oracle#{File.extname(input)}"
+      @output = "#{File.basename(input, '.*')}_oracle#{File.extname(input)}"
       FileUtils.cp(input, @output)
       baksmali(@output)
     else
