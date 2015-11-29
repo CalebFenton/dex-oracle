@@ -5,19 +5,23 @@ class SmaliMethod
   PARAMETER_ISOLATOR = /\([^\)]+\)/
   PARAMETER_INDIVIDUATOR = /(\[*(?:[BCDFIJSZ]|L[^;]+;))/
 
-  def initialize(class_name, method_signature, body)
+  def initialize(class_name, signature, body = nil)
     @modified = false
     @class = class_name
-    @name = method_signature[/[^\(]+/]
-    @return_type = method_signature[/[^\)$]+$/]
-    @descriptor = "#{class_name}->#{method_signature}"
-    @signature = method_signature
-    parameter_string = method_signature[PARAMETER_ISOLATOR]
-    @parameters = []
-    parameter_string.scan(PARAMETER_INDIVIDUATOR).each do |m|
-      @parameters << m.first
-    end
+    @name = signature[/[^\(]+/]
     @body = body
+
+    @return_type = signature[/[^\)$]+$/]
+    @descriptor = "#{class_name}->#{signature}"
+    @signature = signature
+
+    @parameters = []
+    parameter_string = signature[PARAMETER_ISOLATOR]
+    unless parameter_string.nil?
+      parameter_string.scan(PARAMETER_INDIVIDUATOR).each do |m|
+        @parameters << m.first
+      end
+    end
   end
 
   def to_s

@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="26aaf32f-dfc5-4f07-a142-d7a4422a601f" name="Default" comment="" />
+    <list default="true" id="26aaf32f-dfc5-4f07-a142-d7a4422a601f" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bin/dex-oracle" afterPath="$PROJECT_DIR$/bin/dex-oracle" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/dex-oracle/driver.rb" afterPath="$PROJECT_DIR$/lib/dex-oracle/driver.rb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/oracle.rb" afterPath="$PROJECT_DIR$/lib/oracle.rb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/dex-oracle/plugin.rb" afterPath="$PROJECT_DIR$/lib/dex-oracle/plugin.rb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/dex-oracle/smali_method.rb" afterPath="$PROJECT_DIR$/lib/dex-oracle/smali_method.rb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/dex-oracle/plugins/undexguard.rb" afterPath="$PROJECT_DIR$/lib/dex-oracle/plugins/undexguard.rb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/dex-oracle/plugins/unreflector.rb" afterPath="$PROJECT_DIR$/lib/dex-oracle/plugins/unreflector.rb" />
+    </list>
     <ignored path="Oracle.iws" />
     <ignored path=".idea/workspace.xml" />
     <ignored path="$PROJECT_DIR$/out/" />
@@ -26,8 +34,8 @@
       <file leaf-file-name="smali_file.rb" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/lib/dex-oracle/smali_file.rb">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.48728815">
-              <caret line="23" column="0" selection-start-line="23" selection-start-column="0" selection-end-line="23" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.6779661">
+              <caret line="32" column="0" selection-start-line="32" selection-start-column="0" selection-end-line="32" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -571,12 +579,12 @@
       <created>1448757764201</created>
       <option name="number" value="Default" />
       <updated>1448757764201</updated>
-      <workItem from="1448757771362" duration="7349000" />
+      <workItem from="1448757771362" duration="7447000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="7349000" />
+    <option name="totallyTimeSpent" value="7447000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="23" width="1440" height="828" extended-state="6" />
@@ -697,8 +705,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/lib/dex-oracle/smali_file.rb">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.48728815">
-          <caret line="23" column="0" selection-start-line="23" selection-start-column="0" selection-end-line="23" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.6779661">
+          <caret line="32" column="0" selection-start-line="32" selection-start-column="0" selection-end-line="32" selection-end-column="0" />
           <folding />
         </state>
       </provider>

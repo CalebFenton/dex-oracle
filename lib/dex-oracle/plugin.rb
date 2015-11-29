@@ -7,6 +7,7 @@ class Plugin
     CONST_STRING = 'const-string [vp]\d+, ' << ESCAPE_STRING << '.*'
     MOVE_RESULT_OBJECT = 'move-result-object ([vp]\d+)'
   end
+
   @plugins = Set.new
 
   def self.plugins

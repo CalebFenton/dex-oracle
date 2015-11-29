@@ -42,20 +42,34 @@ class Undexguard < Plugin
           'invoke-direct {.+?\(\[B\)V' <<
           ')')
 
-  def self.process(smali_file)
+  def self.process(driver, smali_file)
     @@logger = Logger.new(STDOUT)
 
     @@logger.debug("Undexguarding #{smali_file}")
     smali_file.methods.each do |method|
       @@logger.debug("Decrypting #{method.name}")
-      Undexguard.decrypt(method)
+      Undexguard.lookup_strings(driver, method)
     end
   end
 
   private
 
-  def self.decrypt(method)
+  def self.lookup_strings(driver, method)
+    matches = method.body.scan(STRING_LOOKUP)
+    matches.each do |original, arg1, arg2, arg3, class_name, method_signature, out_reg|
+      arg1 = arg1.to_i(16)
+      arg2 = arg2.to_i(16)
+      arg3 = arg3.to_i(16)
 
+      output = driver.run(class_name, method_signature, arg1, arg2, arg3)
+      modification = "const-string #{out_reg}, #{output}"
+
+      method.body.gsub!(original, modification)
+    end
+    method.modified = true unless matches.empty?
+  end
+
+  def self.decrypt(driver, method)
 
   end
 end

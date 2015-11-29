@@ -3,10 +3,12 @@ require 'optparse'
 
 require_relative '../lib/oracle'
 require_relative '../lib/dex-oracle/smali_input'
+require_relative '../lib/dex-oracle/driver'
 
 options = {
-    dir: '/data/local',
+    driver_dir: '/data/local',
     device_id: ENV['ANDROID_SERIAL'],
+    use_dvz: false,
 }
 
 optparse = OptionParser.new do |opts|
@@ -16,7 +18,7 @@ optparse = OptionParser.new do |opts|
     exit
   end
 
-  opts.on('-d', '--dir DIR',
+  opts.on('-d', '--driver-dir DIR',
     "Writable device location to execute driver, default=\"#{options[:dir]}\"") do |dir|
     options[:dir] = dir
   end
@@ -25,20 +27,27 @@ optparse = OptionParser.new do |opts|
     "Device ID for driver execution, default=\"#{options[:device_id]}\"") do |id|
     options[:device_id] = id
   end
+
+  opts.on('-z', '--use_dvz',
+    "Use dvz command rather than dalvikvm, default=\"#{options[:use_dvz]}\"") do
+    options[:use_dvz] = true
+  end
 end
 
 optparse.parse!
 
 if ARGV.size < 1
   puts optparse.help
-  exit
+  exit(-1)
 end
 
 start = Time.now
 
 input = ARGV[0]
 smali_input = SmaliInput.new(input)
-oracle = Oracle.new(smali_input.dir)
+
+driver = Driver.new(options[:driver_dir], options[:device_id], options[:use_dvz])
+oracle = Oracle.new(smali_input.dir, driver)
 oracle.divine
 
 smali_input.finish
