@@ -17,6 +17,7 @@ EOF
   dependencies = [
 #    [:runtime,     'mechanize',  '~> 2.7', '> 2.7.0'],
     [:development, 'rspec'],
+    [:development, 'rspec-its'],
   ]
 
   s.files         = Dir['**/*']

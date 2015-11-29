@@ -1,8 +1,9 @@
 require 'bundler/setup'
 Bundler.setup
 
-require 'dex-oracle' # and any other gems you need
+require 'dex-oracle'
+require 'rspec/its'
 
 RSpec.configure do |config|
-  # some (optional) config here
+
 end
