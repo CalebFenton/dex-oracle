@@ -1,5 +1,5 @@
 class SmaliInput
-  attr_reader :temporary, :dir
+  attr_reader :temporary, :dir, :output
 
   DEX_MAGIC = [0x64, 0x65, 0x78]
   PK_ZIP_MAGIC = [0x50, 0x4b, 0x3]
@@ -8,7 +8,18 @@ class SmaliInput
     unpack(input)
   end
 
+  def finish
+    SmaliInput.repack(dir, output) unless @output.nil?
+    FileUtils.rm_rf(smali_input.dir) if @temporary
+  end
+
   private
+
+  def repack(dir, output)
+    raise 'Smali could not be found on the path.' if SmaliInput.which('smali').nil?
+    cmd = "smali #{dir} -o #{output}"
+    SmaliInput.run(cmd)
+  end
 
   def unpack(input)
     if File.directory?(input)
@@ -21,7 +32,9 @@ class SmaliInput
     case magic
     when PK_ZIP_MAGIC, DEX_MAGIC
       @temporary = true
-      baksmali(input)
+      @output = "#{File.basename(input)}_oracle#{File.extname(input)}"
+      FileUtils.cp(input, @output)
+      baksmali(@output)
     else
       raise "Unrecognized file type for: #{input}, magic=#{magic.inspect}"
     end

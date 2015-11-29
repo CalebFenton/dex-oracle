@@ -41,6 +41,6 @@ smali_input = SmaliInput.new(input)
 oracle = Oracle.new(smali_input.dir)
 oracle.divine
 
-FileUtils.rm_rf(smali_input.dir) if smali_input.temporary
+smali_input.finish
 
 puts "Time elapsed #{Time.now - start} seconds"

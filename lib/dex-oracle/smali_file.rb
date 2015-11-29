@@ -2,7 +2,7 @@ require_relative 'smali_field'
 require_relative 'smali_method'
 
 class SmaliFile
-  attr_reader :class, :super, :interfaces, :methods, :fields, :file_path
+  attr_reader :class, :super, :interfaces, :methods, :fields, :file_path, :content
 
   ACCESSOR = /(?:interface|public|protected|private|abstract|static|final|synchronized|transient|volatile|native|strictfp|synthetic|enum|annotation)/
   TYPE = /(?:[IJFDZBCV]|L[^;]+;)/
@@ -14,25 +14,50 @@ class SmaliFile
 
   def initialize(file_path)
     @file_path = file_path
+    @modified = false
     parse(file_path)
+  end
+
+  def update
+    @methods.each do |m|
+      next unless m.modified
+      update_method(m)
+      m.modified = false
+    end
   end
 
   private
 
   def parse(file_path)
-    content = IO.read(file_path)
-    @class = content[CLASS, 1]
-    @super = content[SUPER, 1]
+    @content = IO.read(file_path)
+    @class = @content[CLASS, 1]
+    @super = @content[SUPER, 1]
     @interfaces = []
-    content.scan(INTERFACE).each { |m| @interfaces << m.first }
+    @content.scan(INTERFACE).each { |m| @interfaces << m.first }
     @fields = []
-    content.scan(FIELD).each { |m| @fields << SmaliField.new(@class, m.first) }
+    @content.scan(FIELD).each { |m| @fields << SmaliField.new(@class, m.first) }
     @methods = []
-    content.scan(METHOD).each { |m| @methods << SmaliMethod.new(@class, m.first) }
+    @content.scan(METHOD).each do |m|
+      body_regex = build_method_regex(m.first)
+      body = @content[body_regex, 1]
+      @methods << SmaliMethod.new(@class, m.first, body)
+    end
   end
 
   def to_s
     @file_path
+  end
+
+  private
+
+  def build_method_regex(method_signature)
+    /\.method (?:#{ACCESSOR} )+#{Regexp.escape(method_signature)}(.*)^\.end method/m
+  end
+
+  def update_method(method)
+    body_regex = build_method_regex(method.signature)
+    body = @content[body_regex, 1]
+    @content.sub!(body, method.body)
   end
 end
 
