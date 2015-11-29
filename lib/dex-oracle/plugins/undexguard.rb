@@ -39,7 +39,7 @@ class Undexguard < Plugin
   STRING_DECRYPT_ALT = Regexp.new(
       '^[ \t]*(' <<
           CONST_STRING << '\s+' <<
-          'new-instance ([vp]\d+), L.+?;\s+(?:move-object(?:\/from16)? [vp]\d+, [vp]\d+\s+)?' <<
+          'new-instance ([vp]\d+), L.+?;\s+(?:move-object(?:\/from16)? [vp]\d+, [vp]\d+\s+)?' \
           'invoke-static {.+?\[B\s+' <<
           'move-result-object [vp]\d+\s+' <<
           CONST_STRING << '\s+' <<
@@ -77,6 +77,12 @@ class Undexguard < Plugin
           ')')
 
   def process(smali_file)
-    fail 'This method is not implemented.'
+
+  end
+
+  private
+
+  def decrypt_string(method_body)
+
   end
 end

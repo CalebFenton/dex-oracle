@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Oracle.iml" filepath="$PROJECT_DIR$/Oracle.iml" />
+      <module fileurl="file://$PROJECT_DIR$/DexOracle.iml" filepath="$PROJECT_DIR$/DexOracle.iml" />
     </modules>
   </component>
 </project>

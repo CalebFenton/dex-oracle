@@ -1,4 +1,5 @@
-require_relative 'plugin'
+require_relative 'dex-oracle/plugin'
+require_relative 'dex-oracle/smali_file'
 
 class Oracle
   def initialize(smali_dir)

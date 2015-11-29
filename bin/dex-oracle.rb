@@ -1,12 +1,13 @@
 #!/usr/bin/env ruby
 require 'optparse'
 
-require_relative '../lib/oracle'
-require_relative '../lib/oracle/smali_factory'
+require_relative '../lib/dex-oracle'
+require_relative '../lib/dex-oracle/smali_factory'
 
 options = {
     dir: '/data/local',
     device_id: nil,
+
 }
 
 optparse = OptionParser.new do |opts|
@@ -20,7 +21,7 @@ optparse = OptionParser.new do |opts|
     options[:dir] = dir
   end
 
-  opts.on('-i', '--device-id', "Device ID for driver execution") do |id|
+  opts.on('-i', '--device-id DEV_ID', "Device ID for driver execution") do |id|
     options[:device_id] = id
   end
 end
