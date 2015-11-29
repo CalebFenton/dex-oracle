@@ -2,12 +2,22 @@
 require 'optparse'
 
 require_relative '../lib/dex-oracle'
-require_relative '../lib/dex-oracle/smali_factory'
+require_relative '../lib/dex-oracle/smali_input'
+
+def which(cmd)
+  exts = ENV['PATHEXT'] ? ENV['PATHEXT'].split(';') : ['']
+  ENV['PATH'].split(File::PATH_SEPARATOR).each do |path|
+    exts.each do |ext|
+      exe = File.join(path, "#{cmd}#{ext}")
+      return exe if File.executable?(exe) && !File.directory?(exe)
+    end
+  end
+  nil
+end
 
 options = {
     dir: '/data/local',
     device_id: nil,
-
 }
 
 optparse = OptionParser.new do |opts|
@@ -17,7 +27,7 @@ optparse = OptionParser.new do |opts|
     exit
   end
 
-  opts.on('-d', '--dir DIR', "Writable location to execute driver, default=\"#{options[:dir]}\"") do |dir|
+  opts.on('-d', '--dir DIR', "Writable device location to execute driver, default=\"#{options[:dir]}\"") do |dir|
     options[:dir] = dir
   end
 
@@ -33,12 +43,13 @@ if ARGV.size < 1
   exit
 end
 
-input = ARGV[0]
-smali_files = SmaliFactory.build(input)
-
 start = Time.now
-oracle = Oracle.new(smali_files)
 
+input = ARGV[0]
+smali_input = SmaliInput.new(input)
+oracle = Oracle.new(smali_input.dir)
 oracle.divine
+
+FileUtils.rm_rf(smali_input.dir) if smali_input.temporary
 
 puts "Time elapsed #{Time.now - start} seconds"

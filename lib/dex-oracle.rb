@@ -5,7 +5,7 @@ class Oracle
   def initialize(smali_dir)
     Dir['./plugins/*.rb'].each { |f| require f }
     Plugin.register_plugins
-    @smali_files = parse_smali(smali_dir)
+    @smali_files = Oracle.parse_smali(smali_dir)
   end
 
   def divine
@@ -16,7 +16,9 @@ class Oracle
 
   private
 
-  def parse_smali(smali_dir)
-
+  def self.parse_smali(smali_dir)
+    smali_files = []
+    Dir["#{smali_dir}/*.smali"].each { |f| smali_files << SmaliFile.new(f) }
+    smali_files
   end
 end

@@ -16,6 +16,6 @@ class SmaliField
     end
 
     def state
-        [@name, @type, @descriptor]
+        [@name, @class, @type, @descriptor]
     end
 end

@@ -25,6 +25,6 @@ class SmaliMethod
   end
 
   def state
-      [@parameters, @return_type, @class, @name, @descriptor]
+      [@name, @class, @descriptor, @parameters, @return_type]
   end
 end
