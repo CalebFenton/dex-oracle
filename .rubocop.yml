@@ -1,0 +1,8 @@
+Style/IndentationWidth:
+  Enabled: false
+
+Style/LineLength:
+  Enabled: false
+
+Style/LeadingCommentSpace:
+  Enabled: false

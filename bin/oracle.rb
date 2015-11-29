@@ -5,8 +5,8 @@ require_relative '../lib/oracle'
 require_relative '../lib/oracle/smali_factory'
 
 options = {
-    :dir => '/data/local',
-    :device_id => nil,
+    dir: '/data/local',
+    device_id: nil,
 }
 
 optparse = OptionParser.new do |opts|
@@ -28,7 +28,7 @@ end
 optparse.parse!
 
 if ARGV.size < 1
-  puts optparse.help()
+  puts optparse.help
   exit
 end
 
