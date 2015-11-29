@@ -6,12 +6,12 @@ Gem::Specification.new do |s|
   s.name     = 'dex-oracle'
   s.version  = DexOracle::VERSION.dup
   s.date     = '2015-11-28'
-  s.summary  = 'Pattern based Dalvik deoptimizer'
+  s.summary  = 'Pattern based Dalvik deobfuscator'
   s.email    = 'calebjfenton@gmail.com'
   s.homepage = 'https://github.com/CalebFenton/dex-oracle'
   s.authors  = ['Caleb Fenton']
   s.description = <<-EOF
-DexOracle is a pattern based Dalvik deoptimizer which uses limited execution to improve semantic analysis.
+DexOracle is a pattern based Dalvik deobfuscator which uses limited execution to improve semantic analysis.
 EOF
 
   dependencies = [
