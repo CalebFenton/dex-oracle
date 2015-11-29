@@ -1,12 +1,12 @@
 require 'spec_helper'
 
 describe SmaliInput do
-    DATA_PATH = 'spec/data'
-    TEMP_DIR = '/fake/tmp/dir'
+    let(:data_path) { 'spec/data' }
+    let(:temp_dir) { '/fake/tmp/dir' }
 
     context 'for input that must be disassembled with baksmali' do
         let(:smali) do
-            allow(Dir).to receive(:mktmpdir).and_return(TEMP_DIR)
+            allow(Dir).to receive(:mktmpdir).and_return(temp_dir)
             allow(SmaliInput).to receive(:which).and_return('baksmali')
             allow(SmaliInput).to receive(:run)
             SmaliInput.new(file_path)
@@ -14,21 +14,21 @@ describe SmaliInput do
         subject { smali }
 
         context 'with an apk' do
-            let(:file_path) { "#{DATA_PATH}/helloworld.apk" }
+            let(:file_path) { "#{data_path}/helloworld.apk" }
             its(:temporary) { should eq true }
-            its(:dir) { should eq TEMP_DIR }
+            its(:dir) { should eq temp_dir }
         end
 
         context 'with a dex' do
-            let(:file_path) { "#{DATA_PATH}/helloworld.dex" }
+            let(:file_path) { "#{data_path}/helloworld.dex" }
             its(:temporary) { should eq true }
-            its(:dir) { should eq TEMP_DIR }
+            its(:dir) { should eq temp_dir }
         end
     end
 
     context 'for input that must be disassembled without baksmali' do
         let(:smali) do
-            allow(Dir).to receive(:mktmpdir).and_return(TEMP_DIR)
+            allow(Dir).to receive(:mktmpdir).and_return(temp_dir)
             allow(SmaliInput).to receive(:which).and_return(nil)
             allow(SmaliInput).to receive(:run)
             SmaliInput.new(file_path)
@@ -41,9 +41,9 @@ describe SmaliInput do
     end
 
     context 'for unrecognized input type' do
-        let(:file_path) { "#{DATA_PATH}/helloworld.smali" }
+        let(:file_path) { "#{data_path}/helloworld.smali" }
         let(:smali) do
-            allow(Dir).to receive(:mktmpdir).and_return(TEMP_DIR)
+            allow(Dir).to receive(:mktmpdir).and_return(temp_dir)
             SmaliInput.new(file_path)
         end
         subject { smali }
@@ -54,10 +54,10 @@ describe SmaliInput do
     end
 
     context 'for a directory' do
-        let(:file_path) { DATA_PATH }
+        let(:file_path) { "#{data_path}/smali" }
         let(:smali) { SmaliInput.new(file_path) }
         subject { smali }
         its(:temporary) { should eq false }
-        its(:dir) { should eq DATA_PATH }
+        its(:dir) { should eq file_path }
     end
 end

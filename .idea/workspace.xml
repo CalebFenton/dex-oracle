@@ -1,20 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="26aaf32f-dfc5-4f07-a142-d7a4422a601f" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/bin/dex-oracle.rb" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/bin/oracle.rb" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/dex-oracle/smali_factory.rb" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/spec/oracle/smali_field_spec.rb" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/spec/oracle/smali_file_spec.rb" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/spec/oracle/smali_method_spec.rb" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dex-oracle.gemspec" afterPath="$PROJECT_DIR$/dex-oracle.gemspec" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/dex-oracle.rb" afterPath="$PROJECT_DIR$/lib/dex-oracle.rb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/spec/data/helloworld.smali" afterPath="$PROJECT_DIR$/spec/data/helloworld.smali" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/dex-oracle/smali_field.rb" afterPath="$PROJECT_DIR$/lib/dex-oracle/smali_field.rb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/dex-oracle/smali_method.rb" afterPath="$PROJECT_DIR$/lib/dex-oracle/smali_method.rb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/spec/spec_helper.rb" afterPath="$PROJECT_DIR$/spec/spec_helper.rb" />
-    </list>
+    <list default="true" id="26aaf32f-dfc5-4f07-a142-d7a4422a601f" name="Default" comment="" />
     <ignored path="Oracle.iws" />
     <ignored path=".idea/workspace.xml" />
     <ignored path="$PROJECT_DIR$/out/" />
@@ -584,16 +571,16 @@
       <created>1448757764201</created>
       <option name="number" value="Default" />
       <updated>1448757764201</updated>
-      <workItem from="1448757771362" duration="6811000" />
+      <workItem from="1448757771362" duration="7112000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="6811000" />
+    <option name="totallyTimeSpent" value="7112000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="23" width="1440" height="828" extended-state="6" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
       <window_info id="Palette&#9;" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="UI Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
@@ -611,7 +598,7 @@
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.18311875" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.18311875" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -704,14 +691,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="8" column="0" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/dex-oracle.rb">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="1" column="40" selection-start-line="1" selection-start-column="40" selection-end-line="1" selection-end-column="40" />
           <folding />
         </state>
       </provider>

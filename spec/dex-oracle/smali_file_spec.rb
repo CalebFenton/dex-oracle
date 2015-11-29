@@ -1,10 +1,10 @@
 require 'spec_helper'
 
 describe SmaliFile do
-    DATA_PATH = 'spec/data/%s'
+    let(:data_path) { 'spec/data/smali' }
 
     context 'the hello world smali' do
-        let(:file_path) { DATA_PATH % 'helloworld.smali' }
+        let(:file_path) { "#{data_path}/helloworld.smali" }
         let(:smali_file) { SmaliFile.new(file_path) }
         subject { smali_file }
 
