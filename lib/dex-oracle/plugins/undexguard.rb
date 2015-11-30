@@ -49,10 +49,10 @@ class Undexguard < Plugin
     made_changes = false
     smali_file.methods.each do |method|
       @@logger.debug("Undexguarding #{method.descriptor}")
-      Undexguard.lookup_strings_3int(driver, method)
-      #Undexguard.lookup_strings_1int(driver, method)
-      #Undexguard.decrypt_strings(driver, method)
-      made_changes |= method.modified
+      made_changes |= Undexguard.lookup_strings_3int(driver, method)
+      made_changes |= Undexguard.lookup_strings_1int(driver, method)
+      made_changes |= Undexguard.decrypt_strings(driver, method)
+      method.modified = made_changes
     end
 
     made_changes
@@ -67,10 +67,10 @@ class Undexguard < Plugin
         class_name, method_signature, arg1.to_i(16), arg2.to_i(16), arg3.to_i(16)
       )
       modification = "const-string #{out_reg}, #{output}"
-      puts output
       method.body.gsub!(original, modification)
     end
-    method.modified = true unless matches.empty?
+
+    !matches.empty?
   end
 
   def self.lookup_strings_1int(driver, method)
@@ -80,10 +80,10 @@ class Undexguard < Plugin
         class_name, method_signature, arg1.to_i(16)
       )
       modification = "const-string #{out_reg}, #{output}"
-
       method.body.gsub!(original, modification)
     end
-    method.modified = true unless matches.empty?
+
+    !matches.empty?
   end
 
   def self.decrypt_strings(driver, method)
@@ -96,6 +96,7 @@ class Undexguard < Plugin
 
       method.body.gsub!(original, modification)
     end
-    method.modified = true unless matches.empty?
+
+    !matches.empty?
   end
 end

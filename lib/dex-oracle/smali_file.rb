@@ -21,9 +21,11 @@ class SmaliFile
   def update
     @methods.each do |m|
       next unless m.modified
+      puts "Updating!! #{m}"
       update_method(m)
       m.modified = false
     end
+    File.open(@file_path, 'w') { |f| f.write(@content) }
   end
 
   private

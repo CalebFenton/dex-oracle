@@ -25,7 +25,10 @@ class Driver
 
   def exec(cmd)
     puts "cmd = #{cmd}"
-    output = `#{cmd}`
+    @cache[cmd] = `#{cmd}`.rstrip unless @cache.has_key?(cmd)
+    output = @cache[cmd]
+    puts "output = #{output}"
+    output
     #output.inspect.gsub('\\', '\\\\\\\\')
   end
 

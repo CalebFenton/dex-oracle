@@ -20,7 +20,7 @@ class Oracle
         Plugin.plugins.each { |p| made_changes |= p.process(@driver, smali_file) }
         break unless made_changes
       end
-      #smali_file.update
+      smali_file.update
     end
   end
 
