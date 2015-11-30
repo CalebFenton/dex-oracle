@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+cd driver
+./gradlew clean fatjar
+dx --dex --output=../resources/driver.dex build/libs/driver.jar
