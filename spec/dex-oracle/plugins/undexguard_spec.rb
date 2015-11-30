@@ -5,8 +5,8 @@ describe Undexguard do
     let(:smali_file) { SmaliFile.new(file_path) }
     let(:driver) { instance_double("Driver") }
 
-    describe 'string lookups' do
-        let(:file_path) { "#{data_path}/string_lookup.smali" }
+    describe 'string lookups with 3 int' do
+        let(:file_path) { "#{data_path}/string_lookup_3int.smali" }
         subject { smali_file.methods.first }
         its(:body) {
             allow(driver).to receive(:run) { '"looked up"' }
@@ -15,4 +15,16 @@ describe Undexguard do
             should eq "\n    .locals 3\n\n    const-string v0, \"looked up\"\n\n    return-void\n"
         }
     end
+
+    describe 'string lookups with 1 int' do
+        let(:file_path) { "#{data_path}/string_lookup_1int.smali" }
+        subject { smali_file.methods.first }
+        its(:body) {
+            allow(driver).to receive(:run) { '"looked up"' }
+            expect(driver).to receive(:run).with('org/cf/StringLookup', 'lookup', 0)
+            Undexguard.process(driver, smali_file)
+            should eq "\n    .locals 3\n\n    const-string v0, \"looked up\"\n\n    return-void\n"
+        }
+    end
+
 end

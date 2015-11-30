@@ -1,4 +1,4 @@
-.class public LStringLookup;
+.class public Lorg/cf/StringLookup;
 .super Ljava/lang/Object;
 
 .method public static doStuff()V
