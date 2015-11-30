@@ -23,8 +23,8 @@ class Driver
   end
 
   def exec(cmd)
-    #output = `cmd`
-    #output.inspect.gsub('\\', '\\\\\\\\')
+    output = `cmd`
+    output.inspect.gsub('\\', '\\\\\\\\')
   end
 
   private
