@@ -6,7 +6,7 @@ class Undexguard < Plugin
   STRING_LOOKUP_3INT = Regexp.new(
       '^[ \t]*(' <<
           ((CONST_NUMBER << '\s+') * 3) <<
-          'invoke-static \{[vp]\d+, [vp]\d+, [vp]\d+\}, L([^;]+);->([^\(]+)\(III\)Ljava/lang/String;' <<
+          'invoke-static \{[vp]\d+, [vp]\d+, [vp]\d+\}, L([^;]+);->([^\(]+\(III\))Ljava/lang/String;' <<
           '\s+' <<
           MOVE_RESULT_OBJECT <<
           ')', Regexp::MULTILINE)
@@ -14,7 +14,7 @@ class Undexguard < Plugin
   STRING_LOOKUP_1INT = Regexp.new(
       '^[ \t]*(' <<
           CONST_NUMBER << '\s+' <<
-          'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+)\(I\)Ljava/lang/String;' <<
+          'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(I\))Ljava/lang/String;' <<
           '\s+' <<
           MOVE_RESULT_OBJECT <<
           ')')
@@ -22,7 +22,7 @@ class Undexguard < Plugin
   STRING_DECRYPT = Regexp.new(
       '^[ \t]*(' <<
           CONST_STRING << '\s+' <<
-          'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+)\(Ljava/lang/String;\)Ljava/lang/String;' <<
+          'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(Ljava/lang/String;\))Ljava/lang/String;' <<
           '\s+' <<
           MOVE_RESULT_OBJECT <<
           ')')
@@ -46,13 +46,16 @@ class Undexguard < Plugin
   def self.process(driver, smali_file)
     @@logger = Logger.new(STDOUT)
 
-    @@logger.debug("Undexguarding #{smali_file}")
+    made_changes = false
     smali_file.methods.each do |method|
-      @@logger.debug("Decrypting #{method.name}")
+      @@logger.debug("Undexguarding #{method.descriptor}")
       Undexguard.lookup_strings_3int(driver, method)
-      Undexguard.lookup_strings_1int(driver, method)
-      Undexguard.decrypt_strings(driver, method)
+      #Undexguard.lookup_strings_1int(driver, method)
+      #Undexguard.decrypt_strings(driver, method)
+      made_changes |= method.modified
     end
+
+    made_changes
   end
 
   private
@@ -64,7 +67,7 @@ class Undexguard < Plugin
         class_name, method_signature, arg1.to_i(16), arg2.to_i(16), arg3.to_i(16)
       )
       modification = "const-string #{out_reg}, #{output}"
-
+      puts output
       method.body.gsub!(original, modification)
     end
     method.modified = true unless matches.empty?
@@ -85,7 +88,6 @@ class Undexguard < Plugin
 
   def self.decrypt_strings(driver, method)
     matches = method.body.scan(STRING_DECRYPT)
-    #orig_str, enc_str, class_name, method_name, dest
     matches.each do |original, encrypted, class_name, method_signature, out_reg|
       output = driver.run(
         class_name, method_signature, encrypted

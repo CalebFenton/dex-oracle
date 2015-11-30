@@ -26,7 +26,7 @@ class Driver
   def exec(cmd)
     puts "cmd = #{cmd}"
     output = `#{cmd}`
-    output.inspect.gsub('\\', '\\\\\\\\')
+    #output.inspect.gsub('\\', '\\\\\\\\')
   end
 
   def install(dex)
@@ -73,7 +73,8 @@ class Driver
 
   def build_command(class_name, method_name, parameters, args)
     class_name.gsub!('/', '.') # Make valid Java class name
-    target = "#{class_name} #{method_name}"
+    class_name.gsub!('$', '\$')
+    target = "'#{class_name}' '#{method_name}'"
     target_args = parameters.map.with_index do |o, i|
       if o[0] == 'L'
         obj = o[1..-2].gsub('/', '.')

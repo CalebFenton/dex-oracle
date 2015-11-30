@@ -47,6 +47,7 @@ public class OracleDriver {
             m = methodClass.getDeclaredMethod(MethodName, ParamTypes);
         } catch (NoSuchMethodException ex) {
             String params = Arrays.deepToString(ParamTypes);
+            params = params.substring(1, params.length() - 1);
             die("Method: " + ClassName + "." + MethodName + "(" + params + ") does not appear to exist. Check method signature.");
         }
         Class<?> returnClass = m.getReturnType();

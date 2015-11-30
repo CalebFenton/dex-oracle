@@ -22,7 +22,7 @@ class SmaliInput
 
   def self.compile(dir, out_dex = nil)
     raise 'Smali could not be found on the path.' if Utility.which('smali').nil?
-    out_dex = Tempfile.new('oracle-dex') if out_dex.nil?
+    out_dex = Tempfile.new(['oracle', '.dex']) if out_dex.nil?
     SmaliInput.exec("smali #{dir} -o #{out_dex.path}")
     out_dex
   end
@@ -51,7 +51,7 @@ class SmaliInput
       @temp_dex = true
       @temp_dir = true
       @out_apk = "#{File.basename(input, '.*')}_oracle#{File.extname(input)}"
-      @out_dex = Tempfile.new(['oracle', '.dex']) if out_dex.nil?
+      @out_dex = Tempfile.new(['oracle', '.dex'])
       FileUtils.cp(input, @out_apk)
       SmaliInput.extract_dex(@out_apk, @out_dex)
       baksmali(input)

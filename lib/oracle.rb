@@ -16,10 +16,11 @@ class Oracle
     @smali_files.each do |smali_file|
       @logger.debug("Processing #{smali_file}")
       loop do
-        Plugin.plugins.each { |p| p.process(@driver, smali_file) }
-        smali_file.methods.each { |m| next if m.modified }
-        break
+        made_changes = false
+        Plugin.plugins.each { |p| made_changes |= p.process(@driver, smali_file) }
+        break unless made_changes
       end
+      #smali_file.update
     end
   end
 
@@ -27,7 +28,7 @@ class Oracle
 
   def self.parse_smali(smali_dir)
     smali_files = []
-    Dir["#{smali_dir}/*.smali"].each { |f| smali_files << SmaliFile.new(f) }
+    Dir["#{smali_dir}/**/*.smali"].each { |f| smali_files << SmaliFile.new(f) }
     smali_files
   end
 end

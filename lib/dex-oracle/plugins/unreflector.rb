@@ -41,6 +41,10 @@ class Unreflector < Plugin
 
     @@logger.debug("Unreflecting #{smali_file}")
     made_changes = false
+    smali_file.methods.each do |method|
+      #@@logger.debug("Unreflecting #{method.descriptor}")
+      #made_changes |= method.modified
+    end
 
     made_changes
   end
