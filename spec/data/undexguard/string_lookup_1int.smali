@@ -2,7 +2,7 @@
 .super Ljava/lang/Object;
 
 .method public static doStuff()V
-    .locals 3
+    .locals 1
 
     const/4 v0, 0x0
 

@@ -1,7 +1,6 @@
 require 'logger'
 
 class Undexguard < Plugin
-
   include CommonRegex
 
   STRING_LOOKUP_3INT = Regexp.new(
@@ -52,6 +51,7 @@ class Undexguard < Plugin
       @@logger.debug("Decrypting #{method.name}")
       Undexguard.lookup_strings_3int(driver, method)
       Undexguard.lookup_strings_1int(driver, method)
+      Undexguard.decrypt_strings(driver, method)
     end
   end
 
@@ -83,7 +83,17 @@ class Undexguard < Plugin
     method.modified = true unless matches.empty?
   end
 
-  def self.decrypt(driver, method)
+  def self.decrypt_strings(driver, method)
+    matches = method.body.scan(STRING_DECRYPT)
+    #orig_str, enc_str, class_name, method_name, dest
+    matches.each do |original, encrypted, class_name, method_signature, out_reg|
+      output = driver.run(
+        class_name, method_signature, encrypted
+      )
+      modification = "const-string #{out_reg}, #{output}"
 
+      method.body.gsub!(original, modification)
+    end
+    method.modified = true unless matches.empty?
   end
 end
