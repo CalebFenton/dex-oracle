@@ -18,7 +18,7 @@ describe Driver do
                 it {
                     allow(driver).to receive(:exec)
                     expect(driver).to receive(:exec).with(
-                        "adb shell dalvikvm -cp /data/local org.cf.OracleDriver some.Klazz run 'I:1' 'I:2' 'I:3'"
+                        "adb shell dalvikvm -cp /data/local/od.zip org.cf.driver.OracleDriver some.Klazz run 'I:1' 'I:2' 'I:3'"
                     )
                     subject
                 }
@@ -37,7 +37,7 @@ describe Driver do
                 it {
                     allow(driver).to receive(:exec)
                     expect(driver).to receive(:exec).with(
-                        "adb shell dvz -classpath /data/local org.cf.OracleDriver string.Klazz run 'java.lang.String:[104,101,108,108,111,32,115,116,114,105,110,103]'"
+                        "adb shell dvz -classpath /data/local/od.zip org.cf.driver.OracleDriver string.Klazz run 'java.lang.String:[104,101,108,108,111,32,115,116,114,105,110,103]'"
                     )
                     subject
                 }

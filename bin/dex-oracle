@@ -45,8 +45,8 @@ start = Time.now
 
 input = ARGV[0]
 smali_input = SmaliInput.new(input)
-
 driver = Driver.new(options[:driver_dir], options[:device_id], options[:use_dvz])
+driver.install(smali_input.out_dex)
 oracle = Oracle.new(smali_input.dir, driver)
 oracle.divine
 

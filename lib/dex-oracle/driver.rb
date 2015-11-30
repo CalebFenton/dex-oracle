@@ -1,3 +1,5 @@
+require_relative 'utility'
+
 class Driver
   UNESCAPES = {
       'a' => "\x07", 'b' => "\x08", 't' => "\x09",
@@ -12,22 +14,50 @@ class Driver
     @device_id = device_id
     @use_dvz = use_dvz
     @cache = {}
-    @cmd_stub = "adb shell #{@use_dvz ? 'dvz -classpath' : 'dalvikvm -cp'} #{@dir} org.cf.OracleDriver"
+    @cmd_stub = "adb shell #{@use_dvz ? 'dvz -classpath' : 'dalvikvm -cp'} #{@dir}/od.zip org.cf.driver.OracleDriver"
   end
 
   def run(class_name, signature, *args)
     method = SmaliMethod.new(class_name, signature)
     cmd = build_command(method.class, method.name, method.parameters, args)
-    puts "cmd is: " << cmd
     output = exec(cmd)
   end
 
   def exec(cmd)
-    output = `cmd`
+    puts "cmd = #{cmd}"
+    output = `#{cmd}`
     output.inspect.gsub('\\', '\\\\\\\\')
   end
 
+  def install(dex)
+    raise 'Unable to find Java on the path.' unless Utility.which('java')
+
+    begin
+      # Merge driver and target dex file
+      tf = Tempfile.new(['oracle-driver', '.dex'])
+      cmd = "java -cp resources/dx.jar com.android.dx.merge.DexMerger #{tf.path} #{dex.path} resources/driver.dex"
+      `#{cmd}`
+
+      # Zip merged dex and push to device
+      tz = Tempfile.new(['oracle-driver', '.zip'])
+      Utility.create_zip(tz.path, { 'classes.dex' => tf })
+      `adb push #{tz.path} #{@dir}/od.zip`
+
+      # Must execute once with dalvikvm before dvz will work
+      `#{build_cmd_stub(false)}` if @use_dvz
+    ensure
+      tf.close
+      tf.unlink
+      tz.close
+      tz.unlink
+    end
+  end
+
   private
+
+  def self.build_cmd_stub(use_dvz)
+    "adb shell #{use_dvz ? 'dvz -classpath' : 'dalvikvm -cp'} #{@dir}/od.zip org.cf.driver.OracleDriver"
+  end
 
   def self.unescape(str)
     str.gsub(UNESCAPE_REGEX) do
