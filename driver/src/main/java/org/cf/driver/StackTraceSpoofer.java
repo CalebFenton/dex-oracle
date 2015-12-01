@@ -1,27 +1,37 @@
 package org.cf.driver;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.util.LinkedList;
+import java.util.List;
+
 public class StackTraceSpoofer {
 
-    public static StackTraceElement[] stack = new StackTraceElement[2];
+    private static List<StackTraceElement> stack = new LinkedList<StackTraceElement>();
 
-    public static void main(String[] argv) {
-        if (argv[0].equals("root")) {
-            setRootElement(argv[1], argv[2], argv[3], Integer.parseInt(argv[4]));
-        } else if (argv[0].equals("first")) {
-            setFirstElement(argv[1], argv[2], argv[3], Integer.parseInt(argv[4]));
+    private static void addElement(String declaringClass, String methodName, String fileName, int lineNumber) {
+        stack.add(new StackTraceElement(declaringClass, methodName, fileName, lineNumber));
+    }
+
+    static void init() throws Exception {
+        // <declaring class> <method name> <filename> <line number>
+        File f = new File("stackspoof.cfg");
+        if (!f.exists()) {
+            return;
         }
-    }
 
-    public static void setRootElement(String declaringClass, String methodName, String fileName, int lineNumber) {
-        stack[0] = new StackTraceElement(declaringClass, methodName, fileName, lineNumber);
-    }
-
-    public static void setFirstElement(String declaringClass, String methodName, String fileName, int lineNumber) {
-        stack[1] = new StackTraceElement(declaringClass, methodName, fileName, lineNumber);
+        BufferedReader in = new BufferedReader(new FileReader(f));
+        while (in.ready()) {
+            String s = in.readLine();
+            String[] params = s.split(" ");
+            addElement(params[0], params[1], params[2], Integer.parseInt(params[3]));
+        }
+        in.close();
     }
 
     public static StackTraceElement[] getStackTrace() {
-        return stack;
+        return stack.toArray(new StackTraceElement[stack.size()]);
     }
 
 }
