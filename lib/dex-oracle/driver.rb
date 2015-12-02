@@ -1,3 +1,4 @@
+require 'json'
 require_relative 'utility'
 
 class Driver
@@ -8,19 +9,43 @@ class Driver
       "\"" => "\x22", "'" => "\x27"
   }
   UNESCAPE_REGEX = /\\(?:([#{UNESCAPES.keys.join}])|u([\da-fA-F]{4}))|\\0?x([\da-fA-F]{2})/
+  DRIVER_DIR = '/data/local'
+  DRIVER_CLASS = 'org.cf.oracle.Driver'
 
-  def initialize(dir, device_id, use_dvz)
-    @dir = dir
+  def initialize(device_id)
     @device_id = device_id
-    @use_dvz = use_dvz
+
+    device_str = device_id.empty? ? '' : "-s #{@device_id} "
+    @adb_base = "adb shell #{device_str}\"%s\"; echo $?"
+    @cmd_stub = "export CLASSPATH=#{DRIVER_DIR}/od.zip; app_process /system/bin #{DRIVER_CLASS}"
+
     @cache = {}
-    @cmd_stub = "adb shell #{@use_dvz ? 'dvz -classpath' : 'dalvikvm -cp'} #{@dir}/od.zip org.cf.driver.OracleDriver"
   end
 
-  def run(class_name, signature, *args)
+  def run_single(class_name, signature, *args)
     method = SmaliMethod.new(class_name, signature)
     cmd = build_command(method.class, method.name, method.parameters, args)
     output = exec(cmd)
+  end
+
+  def add_batch(batch, class_name, signature, *args)
+    method = SmaliMethod.new(class_name, signature)
+    item = {
+      className: method.class.gsub('/', '.'),
+      methodName: method.name,
+      arguments: Driver.build_arguments(method.parameters, args)
+    }
+    batch << item
+  end
+
+  def run_batch(batch)
+    json = batch.to_json
+    tf = Tempfile.new(['oracle', '.json'])
+    File.open(tf, 'w') { |f| f.write(batch.to_json) }
+    exec("adb push #{tf.path} #{DRIVER_DIR}/od-targets.json")
+    tf.close
+    tf.unlink
+    exec(@adb_base % "#{@cmd_stub} @#{DRIVER_DIR}/od-targets.json")
   end
 
   def exec(cmd)
@@ -29,6 +54,7 @@ class Driver
     output = @cache[cmd]
     puts "output = #{output}"
     output
+    exit -1
     #output.inspect.gsub('\\', '\\\\\\\\')
   end
 
@@ -44,10 +70,7 @@ class Driver
       # Zip merged dex and push to device
       tz = Tempfile.new(['oracle-driver', '.zip'])
       Utility.create_zip(tz.path, { 'classes.dex' => tf })
-      `adb push #{tz.path} #{@dir}/od.zip`
-
-      # Must execute once with dalvikvm before dvz will work
-      `#{build_cmd_stub(false)}` if @use_dvz
+      `adb push #{tz.path} #{DRIVER_DIR}/od.zip`
     ensure
       tf.close
       tf.unlink
@@ -57,10 +80,6 @@ class Driver
   end
 
   private
-
-  def self.build_cmd_stub(use_dvz)
-    "adb shell #{use_dvz ? 'dvz -classpath' : 'dalvikvm -cp'} #{@dir}/od.zip org.cf.driver.OracleDriver"
-  end
 
   def self.unescape(str)
     str.gsub(UNESCAPE_REGEX) do
@@ -76,9 +95,15 @@ class Driver
 
   def build_command(class_name, method_name, parameters, args)
     class_name.gsub!('/', '.') # Make valid Java class name
-    class_name.gsub!('$', '\$')
+    class_name.gsub!('$', '\$') # inner classes
+    method_name.gsub!('$', '\$') # synthetic method names
     target = "'#{class_name}' '#{method_name}'"
-    target_args = parameters.map.with_index do |o, i|
+    target_args = Driver.build_arguments(parameters, args)
+    @adb_base % "#{@cmd_stub} #{target} #{target_args * ' '}"
+  end
+
+  def self.build_arguments(parameters, args)
+    parameters.map.with_index do |o, i|
       if o[0] == 'L'
         obj = o[1..-2].gsub('/', '.')
         arg = args[i]
@@ -88,6 +113,5 @@ class Driver
         "'#{o}:#{args[i]}'"
       end
     end
-    "#{@cmd_stub} #{target} #{target_args * ' '}"
   end
 end

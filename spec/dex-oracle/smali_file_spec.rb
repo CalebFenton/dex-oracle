@@ -30,6 +30,7 @@ describe SmaliFile do
         describe '#update' do
             subject { smali_file.content }
             it 'should update modified methods' do
+                allow(File).to receive(:open)
                 method = smali_file.methods.first
                 method.modified = true
                 method.body = "\nreturn-void\n"

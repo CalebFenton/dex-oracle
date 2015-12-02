@@ -1,12 +1,55 @@
 require 'spec_helper'
 
 describe Driver do
-    let(:driver_dir) { '/data/local' }
-    let(:driver) { Driver.new(driver_dir, device_id, use_dvz) }
+    let(:driver) { Driver.new(device_id) }
 
-    describe "#run" do
-        context 'using dalvikvm with a device id' do
-            let(:use_dvz) { false }
+    describe '#add_batch' do
+        let(:device_id) { '' }
+        let(:batch) { [] }
+        let(:add_batch) { driver.add_batch(batch, class_name, method_signature, *args) }
+
+        let(:class_name) { 'some/Klazz' }
+        let(:method_signature) { 'run(III)V' }
+        let(:args) { [1,2,3] }
+
+        subject { batch }
+        it {
+            add_batch
+            should eq [{:className=>"some.Klazz", :methodName=>"run", :arguments=>["'I:1'", "'I:2'", "'I:3'"]}]
+        }
+    end
+
+    describe '#run_batch' do
+        let(:temp_file) { '/fake/tmp/file' }
+
+        let(:device_id) { '' }
+        let(:batch) { [{:className=>"some.Klazz", :methodName=>"run", :arguments=>["'I:1'", "'I:2'", "'I:3'"]}] }
+        let(:run_batch) {
+            allow(Tempfile).to receive(:new).and_return(temp_file)
+            allow(temp_file).to receive(:path).and_return(temp_file)
+            allow(temp_file).to receive(:unlink)
+            allow(temp_file).to receive(:close)
+            allow(File).to receive(:open).and_yield(temp_file)
+            allow(temp_file).to receive(:write)
+            allow(driver).to receive(:exec)
+            driver.run_batch(batch)
+        }
+
+        subject { run_batch }
+        it {
+            expect(temp_file).to receive(:write).with(batch.to_json)
+            expect(driver).to receive(:exec).with(
+                "adb push #{temp_file} /data/local/od-targets.json"
+            ).ordered
+            expect(driver).to receive(:exec).with(
+                "adb shell \"export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.oracle.Driver @/data/local/od-targets.json\"; echo $?"
+            ).ordered
+            subject
+        }
+    end
+
+    describe '#run_single' do
+        context 'with a device id' do
             let(:device_id) { '1234abcd' }
 
             context 'with integer arguments' do
@@ -14,30 +57,30 @@ describe Driver do
                 let(:method_signature) { 'run(III)V' }
                 let(:args) { [1,2,3] }
 
-                subject { driver.run(class_name, method_signature, *args) }
+                subject { driver.run_single(class_name, method_signature, *args) }
                 it {
                     allow(driver).to receive(:exec)
                     expect(driver).to receive(:exec).with(
-                        "adb shell dalvikvm -cp /data/local/od.zip org.cf.driver.OracleDriver some.Klazz run 'I:1' 'I:2' 'I:3'"
+                        "adb shell -s #{device_id} \"export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.oracle.Driver 'some.Klazz' 'run' 'I:1' 'I:2' 'I:3'\"; echo $?"
                     )
                     subject
                 }
             end
         end
 
-        context 'using dvz without a device id' do
-            let(:use_dvz) { true }
+        context 'without a device id' do
             let(:device_id) { '' }
+
             context 'with string argument' do
                 let(:class_name) { 'string/Klazz' }
                 let(:method_signature) { 'run(Ljava/lang/String;)V' }
                 let(:args) { 'hello string' }
 
-                subject { driver.run(class_name, method_signature, args) }
+                subject { driver.run_single(class_name, method_signature, args) }
                 it {
                     allow(driver).to receive(:exec)
                     expect(driver).to receive(:exec).with(
-                        "adb shell dvz -classpath /data/local/od.zip org.cf.driver.OracleDriver string.Klazz run 'java.lang.String:[104,101,108,108,111,32,115,116,114,105,110,103]'"
+                        "adb shell \"export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.oracle.Driver 'string.Klazz' 'run' 'java.lang.String:[104,101,108,108,111,32,115,116,114,105,110,103]'\"; echo $?"
                     )
                     subject
                 }

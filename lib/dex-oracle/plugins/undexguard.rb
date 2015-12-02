@@ -63,7 +63,7 @@ class Undexguard < Plugin
   def self.lookup_strings_3int(driver, method)
     matches = method.body.scan(STRING_LOOKUP_3INT)
     matches.each do |original, arg1, arg2, arg3, class_name, method_signature, out_reg|
-      output = driver.run(
+      output = driver.run_single(
         class_name, method_signature, arg1.to_i(16), arg2.to_i(16), arg3.to_i(16)
       )
       modification = "const-string #{out_reg}, #{output}"
@@ -76,7 +76,7 @@ class Undexguard < Plugin
   def self.lookup_strings_1int(driver, method)
     matches = method.body.scan(STRING_LOOKUP_1INT)
     matches.each do |original, arg1, class_name, method_signature, out_reg|
-      output = driver.run(
+      output = driver.run_single(
         class_name, method_signature, arg1.to_i(16)
       )
       modification = "const-string #{out_reg}, #{output}"
@@ -89,7 +89,7 @@ class Undexguard < Plugin
   def self.decrypt_strings(driver, method)
     matches = method.body.scan(STRING_DECRYPT)
     matches.each do |original, encrypted, class_name, method_signature, out_reg|
-      output = driver.run(
+      output = driver.run_single(
         class_name, method_signature, encrypted
       )
       modification = "const-string #{out_reg}, #{output}"

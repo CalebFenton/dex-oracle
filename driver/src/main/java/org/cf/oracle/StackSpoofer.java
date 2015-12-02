@@ -1,12 +1,13 @@
-package org.cf.driver;
+package org.cf.oracle;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-public class StackTraceSpoofer {
+public class StackSpoofer {
 
     private static List<StackTraceElement> stack = new LinkedList<StackTraceElement>();
 
@@ -14,7 +15,7 @@ public class StackTraceSpoofer {
         stack.add(new StackTraceElement(declaringClass, methodName, fileName, lineNumber));
     }
 
-    static void init() throws Exception {
+    static void init() throws NumberFormatException, IOException {
         // <declaring class> <method name> <filename> <line number>
         File f = new File("stackspoof.cfg");
         if (!f.exists()) {
@@ -23,7 +24,11 @@ public class StackTraceSpoofer {
 
         BufferedReader in = new BufferedReader(new FileReader(f));
         while (in.ready()) {
-            String s = in.readLine();
+            String s = in.readLine().trim();
+            if (s.startsWith("//") || s.startsWith("#")) {
+                // Comment
+                continue;
+            }
             String[] params = s.split(" ");
             addElement(params[0], params[1], params[2], Integer.parseInt(params[3]));
         }
