@@ -28,6 +28,10 @@ class SmaliFile
     File.open(@file_path, 'w') { |f| f.write(@content) }
   end
 
+  def to_s
+    @class
+  end
+
   private
 
   def parse(file_path)
@@ -45,12 +49,6 @@ class SmaliFile
       @methods << SmaliMethod.new(@class, m.first, body)
     end
   end
-
-  def to_s
-    @file_path
-  end
-
-  private
 
   def build_method_regex(method_signature)
     /\.method (?:#{ACCESSOR} )+#{Regexp.escape(method_signature)}(.*)^\.end method/m

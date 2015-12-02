@@ -1,6 +1,7 @@
-require 'logger'
+require_relative '../logging'
 
 class Undexguard < Plugin
+  include Logging
   include CommonRegex
 
   STRING_LOOKUP_3INT = Regexp.new(
@@ -43,60 +44,95 @@ class Undexguard < Plugin
           'invoke-direct {.+?\(\[B\)V' <<
           ')')
 
-  def self.process(driver, smali_file)
-    @@logger = Logger.new(STDOUT)
+  def self.process(driver, smali_files)
+    method_to_batch_info = {}
+    smali_files.each do |smali_file|
+      smali_file.methods.each do |method|
+        #next unless method.descriptor =~ %r|Lcom/android/system/admin/ICcIIlo;->test|
+
+        logger.debug("Undexguarding #{method.descriptor}")
+        batch_info = {}
+        batch_info.merge!(Undexguard.lookup_strings_3int(driver, method))
+        batch_info.merge!(Undexguard.lookup_strings_1int(driver, method))
+        batch_info.merge!(Undexguard.decrypt_strings(driver, method))
+        batch_info.map { |k, v| v.uniq! }
+        method_to_batch_info[method] = batch_info unless batch_info.empty?
+      end
+    end
+
+    Undexguard.apply_batch(driver, method_to_batch_info)
+  end
+
+  private
+
+  def self.apply_batch(driver, method_to_batch_info)
+    all_batches = method_to_batch_info.values.collect { |e| e.keys }.flatten
+    outputs = driver.run_batch(all_batches)
 
     made_changes = false
-    smali_file.methods.each do |method|
-      @@logger.debug("Undexguarding #{method.descriptor}")
-      made_changes |= Undexguard.lookup_strings_3int(driver, method)
-      made_changes |= Undexguard.lookup_strings_1int(driver, method)
-      made_changes |= Undexguard.decrypt_strings(driver, method)
-      method.modified = made_changes
+    method_to_batch_info.each do |method, batch_info|
+      batch_info.each do |item, infos|
+        status, output = outputs[item[:id]]
+        unless status == 'success'
+          logger.warn(output)
+          next
+        end
+
+        infos.each do |original, out_reg|
+          modification = "const-string #{out_reg}, #{output}"
+          #puts "modification #{original.inspect} = #{modification.inspect}"
+          # Go home Ruby, you're drunk.
+          modification.gsub!('\\') { '\\\\' }
+          method.body.gsub!(original) { modification }
+        end
+
+        made_changes = true
+        method.modified = true
+      end
     end
 
     made_changes
   end
 
-  private
-
   def self.lookup_strings_3int(driver, method)
+    batch_info = {}
     matches = method.body.scan(STRING_LOOKUP_3INT)
     matches.each do |original, arg1, arg2, arg3, class_name, method_signature, out_reg|
-      output = driver.run_single(
+      item = driver.make_batch_item(
         class_name, method_signature, arg1.to_i(16), arg2.to_i(16), arg3.to_i(16)
       )
-      modification = "const-string #{out_reg}, #{output}"
-      method.body.gsub!(original, modification)
+      batch_info[item] = [] unless batch_info.has_key?(item)
+      batch_info[item] << [original, out_reg]
     end
 
-    !matches.empty?
+    batch_info
   end
 
   def self.lookup_strings_1int(driver, method)
+    batch_info = {}
     matches = method.body.scan(STRING_LOOKUP_1INT)
     matches.each do |original, arg1, class_name, method_signature, out_reg|
-      output = driver.run_single(
+      item = driver.make_batch_item(
         class_name, method_signature, arg1.to_i(16)
       )
-      modification = "const-string #{out_reg}, #{output}"
-      method.body.gsub!(original, modification)
+      batch_info[item] = [] unless batch_info.has_key?(item)
+      batch_info[item] << [original, out_reg]
     end
 
-    !matches.empty?
+    batch_info
   end
 
   def self.decrypt_strings(driver, method)
+    batch_info = {}
     matches = method.body.scan(STRING_DECRYPT)
     matches.each do |original, encrypted, class_name, method_signature, out_reg|
-      output = driver.run_single(
+      item = driver.make_batch_item(
         class_name, method_signature, encrypted
       )
-      modification = "const-string #{out_reg}, #{output}"
-
-      method.body.gsub!(original, modification)
+      batch_info[item] = [] unless batch_info.has_key?(item)
+      batch_info[item] << [original, out_reg]
     end
 
-    !matches.empty?
+    batch_info
   end
 end

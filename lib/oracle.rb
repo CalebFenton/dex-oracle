@@ -1,27 +1,27 @@
+require_relative 'dex-oracle/logging'
 require_relative 'dex-oracle/plugin'
 require_relative 'dex-oracle/smali_file'
 
-require 'logger'
-
 class Oracle
+  include Logging
+
   def initialize(smali_dir, driver)
     Dir["#{File.dirname(__FILE__)}/dex-oracle/plugins/*.rb"].each { |f| require f }
     Plugin.register_plugins
     @smali_files = Oracle.parse_smali(smali_dir)
-    @logger = Logger.new(STDOUT)
     @driver = driver
   end
 
   def divine
-    @smali_files.each do |smali_file|
-      @logger.debug("Processing #{smali_file}")
-      loop do
-        made_changes = false
-        Plugin.plugins.each { |p| made_changes |= p.process(@driver, smali_file) }
-        break unless made_changes
-      end
-      smali_file.update
+    made_changes = false
+    loop do
+      sweep_changes = false
+      Plugin.plugins.each { |p| sweep_changes |= p.process(@driver, @smali_files) }
+      made_changes |= sweep_changes
+      break unless sweep_changes
     end
+
+    @smali_files.each { |sf| sf.update } if made_changes
   end
 
   private

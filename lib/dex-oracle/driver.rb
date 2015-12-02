@@ -1,4 +1,5 @@
 require 'json'
+require 'digest'
 require_relative 'utility'
 
 class Driver
@@ -25,37 +26,72 @@ class Driver
   def run_single(class_name, signature, *args)
     method = SmaliMethod.new(class_name, signature)
     cmd = build_command(method.class, method.name, method.parameters, args)
-    output = exec(cmd)
+    output = adb(cmd)
   end
 
-  def add_batch(batch, class_name, signature, *args)
+  def make_batch_item(class_name, signature, *args)
     method = SmaliMethod.new(class_name, signature)
     item = {
       className: method.class.gsub('/', '.'),
       methodName: method.name,
       arguments: Driver.build_arguments(method.parameters, args)
     }
-    batch << item
+    # Identifiers are used to map individual inputs to individual outputs
+    id = Digest::SHA256.hexdigest(item.to_json)
+    item[:id] = id
+
+    item
   end
 
   def run_batch(batch)
-    json = batch.to_json
-    tf = Tempfile.new(['oracle', '.json'])
-    File.open(tf, 'w') { |f| f.write(batch.to_json) }
-    exec("adb push #{tf.path} #{DRIVER_DIR}/od-targets.json")
+    `adb shell rm #{DRIVER_DIR}/od-targets.json`
+    tf = Tempfile.new(['oracle-targets', '.json'])
+    tf << batch.to_json
+    tf.flush
+    `adb push #{tf.path} #{DRIVER_DIR}/od-targets.json`
+
+    adb("#{@cmd_stub} @#{DRIVER_DIR}/od-targets.json", false)
+    `adb pull #{DRIVER_DIR}/od-output.json #{tf.path}`
+    `adb shell rm #{DRIVER_DIR}/od-output.json`
+    outputs = JSON.parse(File.read(tf.path))
     tf.close
     tf.unlink
-    exec(@adb_base % "#{@cmd_stub} @#{DRIVER_DIR}/od-targets.json")
+
+    outputs
   end
 
-  def exec(cmd)
+  def adb(cmd, cache = true)
     puts "cmd = #{cmd}"
-    @cache[cmd] = `#{cmd}`.rstrip unless @cache.has_key?(cmd)
-    output = @cache[cmd]
+
+    output = nil
+    full_cmd = @adb_base % cmd
+    if cache
+      @cache[cmd] = `#{full_cmd}`.rstrip unless @cache.has_key?(cmd)
+      output = @cache[cmd]
+    else
+      output = `#{full_cmd}`.rstrip
+    end
+
+    output_lines = output.split("\n")
+    exit_code = output_lines.last.to_i
+    if exit_code != 0
+      # Non zero exit code would only imply adb command itself was flawed
+      # app_process, dalvikvm, etc. don't propigate exit codes back
+      raise "Command failed with #{exit_code}: #{full_cmd}\nOutput: #{output}"
+    end
+    output = output_lines[0..-2].join("\n")
+
+    # The driver writes any actual exceptions to the filesystem
+    # Need to check to make sure the output value is legitimate
+    exception = `adb shell cat #{DRIVER_DIR}/od-exception.txt`.strip
+    unless exception.end_with?('No such file or directory')
+      `adb shell rm #{DRIVER_DIR}/od-exception.txt`
+      raise exception
+    end
+
     puts "output = #{output}"
+
     output
-    exit -1
-    #output.inspect.gsub('\\', '\\\\\\\\')
   end
 
   def install(dex)
@@ -99,7 +135,7 @@ class Driver
     method_name.gsub!('$', '\$') # synthetic method names
     target = "'#{class_name}' '#{method_name}'"
     target_args = Driver.build_arguments(parameters, args)
-    @adb_base % "#{@cmd_stub} #{target} #{target_args * ' '}"
+    "#{@cmd_stub} #{target} #{target_args * ' '}"
   end
 
   def self.build_arguments(parameters, args)
@@ -108,9 +144,9 @@ class Driver
         obj = o[1..-2].gsub('/', '.')
         arg = args[i]
         arg = "[#{Driver.unescape(arg).bytes.to_a.join(',')}]" if obj == 'java.lang.String'
-        "'#{obj}:#{arg}'"
+        "#{obj}:#{arg}"
       else
-        "'#{o}:#{args[i]}'"
+        "#{o}:#{args[i]}"
       end
     end
   end

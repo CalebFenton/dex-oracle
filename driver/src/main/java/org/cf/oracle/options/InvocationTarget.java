@@ -4,19 +4,33 @@ import java.lang.reflect.Method;
 
 public class InvocationTarget {
 
-    private Object[] arguments;
-    private Method method;
+    private final Object[] arguments;
+    private final String[] argumentStrings;
+    private final String id;
+    private final Method method;
 
-    void setArguments(Object[] arguments) {
+    InvocationTarget(String id, String[] argumentStrings, Object[] arguments, Method method) {
+        this.id = id;
+        this.argumentStrings = argumentStrings;
         this.arguments = arguments;
-    }
-
-    void setMethod(Method method) {
         this.method = method;
     }
 
     public Object[] getArguments() {
         return arguments;
+    }
+
+    public String getArgumentsString() {
+        StringBuilder sb = new StringBuilder();
+        for (String argumentString : argumentStrings) {
+            sb.append('\'').append(argumentString).append("' ");
+        }
+
+        return sb.toString().trim();
+    }
+
+    public String getId() {
+        return id;
     }
 
     public Method getMethod() {

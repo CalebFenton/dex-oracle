@@ -1,11 +1,15 @@
 package org.cf.oracle;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.cf.oracle.options.InvocationTarget;
 import org.cf.oracle.options.TargetParser;
@@ -15,18 +19,20 @@ import com.google.gson.GsonBuilder;
 
 public class Driver {
 
-    public static final String DRIVER_DIR = "/data/local";
+    private static final String DRIVER_DIR = "/data/local";
+
     private static final String EXCEPTION_LOG = DRIVER_DIR + "/od-exception.txt";
     private static final String OUTPUT_FILE = DRIVER_DIR + "/od-output.json";
     private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
 
-    private static void die(Exception exception) {
+    private static void die(String msg, Exception exception) {
         PrintWriter writer;
         try {
             writer = new PrintWriter(EXCEPTION_LOG, "UTF-8");
         } catch (Exception e) {
             return;
         }
+        writer.println(msg);
         writer.println(exception);
         StringWriter sw = new StringWriter();
         exception.printStackTrace(new PrintWriter(sw));
@@ -64,33 +70,62 @@ public class Driver {
     }
 
     public static void main(String[] args) {
-        if (args.length < 2) {
+        boolean multipleTargets = args.length < 2 && args[0].startsWith("@");
+        if (args.length < 1 && !multipleTargets) {
             showUsage();
             System.exit(-1);
         }
 
-        String output = null;
         try {
             StackSpoofer.init();
-            List<InvocationTarget> targets = TargetParser.parse(args, GSON);
-            if (targets.size() == 1) {
-                InvocationTarget target = targets.get(0);
+        } catch (NumberFormatException | IOException e) {
+            die("Error parsing stack spoof info", e);
+        }
+
+        List<InvocationTarget> targets = null;
+        try {
+            targets = TargetParser.parse(args, GSON);
+        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IOException e) {
+            die("Unable to parse targets", e);
+        }
+
+        String output = null;
+        if (!multipleTargets) {
+            InvocationTarget target = targets.get(0);
+            try {
                 output = invokeMethod(target.getMethod(), target.getArguments());
-                if (output != null) {
-                    System.out.println(output);
-                }
-            } else {
-                String[] outputs = new String[targets.size()];
-                for (int i = 0; i < outputs.length; i++) {
-                    InvocationTarget target = targets.get(i);
-                    outputs[i] = invokeMethod(target.getMethod(), target.getArguments());
-                }
-                String json = GSON.toJson(outputs);
-                FileUtils.writeFile(OUTPUT_FILE, json);
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | IOException e) {
+                die("Error executing '" + target.getMethod() + "' with " + target.getArgumentsString(), e);
             }
-        } catch (Exception e) {
-            die(e);
+
+            if (output != null) {
+                System.out.println(output);
+            }
+        } else {
+            Map<String, String[]> idToOutput = new HashMap<String, String[]>();
+            for (InvocationTarget target : targets) {
+                String status;
+                try {
+                    output = invokeMethod(target.getMethod(), target.getArguments());
+                    status = "success";
+                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | IOException e) {
+                    StringBuilder sb = new StringBuilder("Error executing '");
+                    sb.append(target.getMethod()).append("' with ").append(target.getArgumentsString()).append('\n');
+                    StringWriter sw = new StringWriter();
+                    e.printStackTrace(new PrintWriter(sw));
+                    sb.append(sw.getBuffer());
+                    output = sb.toString();
+                    status = "failure";
+                }
+                idToOutput.put(target.getId(), new String[] { status, output });
+            }
+
+            String json = GSON.toJson(idToOutput);
+            try {
+                FileUtils.writeFile(OUTPUT_FILE, json);
+            } catch (FileNotFoundException | UnsupportedEncodingException e) {
+                die("Unable to write output to " + OUTPUT_FILE, e);
+            }
         }
     }
-
 }

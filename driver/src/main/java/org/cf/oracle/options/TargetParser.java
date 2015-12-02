@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.cf.oracle.Driver;
 import org.cf.oracle.FileUtils;
 
 import com.google.gson.Gson;
@@ -20,6 +19,11 @@ public class TargetParser {
 
     private static InvocationTarget buildTarget(Gson gson, String className, String methodName, String... args)
                     throws ClassNotFoundException, NoSuchMethodException, SecurityException {
+        return buildTarget(gson, "", className, methodName, args);
+    }
+
+    private static InvocationTarget buildTarget(Gson gson, String id, String className, String methodName,
+                    String... args) throws ClassNotFoundException, NoSuchMethodException, SecurityException {
         Class<?>[] parameterTypes = new Class[args.length];
         Object[] methodArguments = new Object[parameterTypes.length];
         for (int i = 0; i < parameterTypes.length; i++) {
@@ -45,24 +49,21 @@ public class TargetParser {
             }
         }
 
-        InvocationTarget target = new InvocationTarget();
-        target.setArguments(methodArguments);
-
         Class<?> methodClass = Class.forName(className);
         Method method = methodClass.getDeclaredMethod(methodName, parameterTypes);
-        target.setMethod(method);
 
-        return target;
+        return new InvocationTarget(id, args, methodArguments, method);
     }
 
     private static List<InvocationTarget> loadTargetsFromFile(Gson gson, String fileName) throws IOException,
                     ClassNotFoundException, NoSuchMethodException, SecurityException {
-        String targetFile = FileUtils.readFile(Driver.DRIVER_DIR + "/" + fileName);
-        JsonObject json = new JsonParser().parse(targetFile).getAsJsonObject();
-        JsonArray targetItems = json.getAsJsonArray();
+        String targetJson = FileUtils.readFile(fileName);
+        JsonArray targetItems = new JsonParser().parse(targetJson).getAsJsonArray();
+        // JsonArray targetItems = json.getAsJsonArray();
         List<InvocationTarget> targets = new LinkedList<InvocationTarget>();
         for (JsonElement element : targetItems) {
             JsonObject targetItem = element.getAsJsonObject();
+            String id = targetItem.get("id").getAsString();
             String className = targetItem.get("className").getAsString();
             String methodName = targetItem.get("methodName").getAsString();
             JsonArray argumentsJson = targetItem.get("arguments").getAsJsonArray();
@@ -71,7 +72,7 @@ public class TargetParser {
                 arguments[i] = argumentsJson.get(i).getAsString();
             }
 
-            InvocationTarget target = buildTarget(gson, className, methodName, arguments);
+            InvocationTarget target = buildTarget(gson, id, className, methodName, arguments);
             targets.add(target);
         }
 

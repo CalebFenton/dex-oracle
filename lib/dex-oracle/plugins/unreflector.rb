@@ -36,15 +36,14 @@ class Unreflector < Plugin
           MOVE_RESULT_OBJECT <<
           ')')
 
-  def self.process(driver, smali_file)
-    @@logger = Logger.new(STDOUT)
+  def self.process(driver, smali_files)
 
-    @@logger.debug("Unreflecting #{smali_file}")
+    #@@logger.debug("Unreflecting #{smali_files}")
     made_changes = false
-    smali_file.methods.each do |method|
+    #smali_file.methods.each do |method|
       #@@logger.debug("Unreflecting #{method.descriptor}")
       #made_changes |= method.modified
-    end
+    #end
 
     made_changes
   end
