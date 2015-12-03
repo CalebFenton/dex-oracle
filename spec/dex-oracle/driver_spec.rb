@@ -1,50 +1,53 @@
 require 'spec_helper'
 
 describe Driver do
-    let(:temp_file) { '/fake/tmp/file' }
+    let(:temp_file) { instance_double('Tempfile') }
+    let(:class_name) { 'some/Klazz' }
+    let(:method_signature) { 'run(III)V' }
+    let(:args) { [1, 2, 3] }
+    let(:batch_item) {
+        {:className=>"some.Klazz", :methodName=>"run", :arguments=>["I:1", "I:2", "I:3"], :id=>"8ea0a5c705617449899c85cec2435356e8be83d6829e12ff109ab0c44c4156c6"}
+    }
     let(:driver) {
-        allow(Tempfile).to receive(:new).and_return(temp_file)
-        allow(File).to receive(:open).and_yield(temp_file)
-        allow(temp_file).to receive(:path).and_return(temp_file)
+        allow(temp_file).to receive(:path).and_return('/fake/tmp/file')
         allow(temp_file).to receive(:unlink)
         allow(temp_file).to receive(:close)
-        allow(temp_file).to receive(:write)
+        allow(temp_file).to receive(:flush)
+        allow(temp_file).to receive(:<<)
+        allow(Tempfile).to receive(:new).and_return(temp_file)
+        allow(File).to receive(:open).and_yield(temp_file)
+        allow(File).to receive(:read)
+        allow(JSON).to receive(:parse)
+        allow(Driver).to receive(:exec)
         Driver.new(device_id)
     }
 
-    describe '#add_batch_item' do
+    describe '#make_batch_item' do
         let(:device_id) { '' }
-        let(:batch) { [] }
-        let(:add_batch_item) { driver.add_batch_item(batch, class_name, method_signature, *args) }
+        let(:make_batch_item) { driver.make_batch_item(class_name, method_signature, *args) }
 
-        let(:class_name) { 'some/Klazz' }
-        let(:method_signature) { 'run(III)V' }
-        let(:args) { [1,2,3] }
-
-        subject { batch }
+        subject { make_batch_item }
         it {
-            add_batch_item
-            should eq [{:className=>"some.Klazz", :methodName=>"run", :arguments=>["'I:1'", "'I:2'", "'I:3'"]}]
+            should eq batch_item
         }
     end
 
     describe '#run_batch' do
         let(:device_id) { '' }
-        let(:batch) { [{:className=>"some.Klazz", :methodName=>"run", :arguments=>["'I:1'", "'I:2'", "'I:3'"]}] }
+        let(:batch) { [batch_item] }
         let(:run_batch) { driver.run_batch(batch) }
 
         subject { run_batch }
         it {
-            allow(driver).to receive(:exec)
-            allow(driver).to receive(:exec_no_cache)
-
-            expect(temp_file).to receive(:write).with(batch.to_json).ordered
-            expect(driver).to receive(:exec_no_cache).with(
-                "adb push #{temp_file} /data/local/od-targets.json"
-            ).ordered
-            expect(driver).to receive(:exec_no_cache).with(
-                "adb shell \"export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.oracle.Driver @/data/local/od-targets.json\"; echo $?"
-            ).ordered
+            allow(driver).to receive(:adb)
+            expect(temp_file).to receive(:<<).with(batch.to_json).ordered
+            #expect(Driver).to receive(:exec).with('adb shell rm /data/local/od-targets.json')
+            expect(Driver).to receive(:exec).with("adb push #{temp_file.path} /data/local/od-targets.json")
+            expect(Driver).to receive(:exec).with("adb pull /data/local/od-output.json #{temp_file.path}")
+            expect(Driver).to receive(:exec).with("adb shell rm /data/local/od-output.json")
+            expect(driver).to receive(:adb).with(
+                'export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.oracle.Driver @/data/local/od-targets.json', false
+            )
             subject
         }
     end
@@ -54,17 +57,11 @@ describe Driver do
             let(:device_id) { '1234abcd' }
 
             context 'with integer arguments' do
-                let(:class_name) { 'some/Klazz' }
-                let(:method_signature) { 'run(III)V' }
-                let(:args) { [1,2,3] }
-
                 subject { driver.run_single(class_name, method_signature, *args) }
                 it {
-                    allow(driver).to receive(:exec)
-                    allow(driver).to receive(:exec_no_cache)
-
-                    expect(driver).to receive(:exec).with(
-                        "adb shell -s #{device_id} \"export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.oracle.Driver 'some.Klazz' 'run' 'I:1' 'I:2' 'I:3'\"; echo $?"
+                    allow(driver).to receive(:adb)
+                    expect(driver).to receive(:adb).with(
+                        "export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.oracle.Driver 'some.Klazz' 'run' I:1 I:2 I:3"
                     )
                     subject
                 }
@@ -81,11 +78,9 @@ describe Driver do
 
                 subject { driver.run_single(class_name, method_signature, args) }
                 it {
-                    allow(driver).to receive(:exec)
-                    allow(driver).to receive(:exec_no_cache)
-
-                    expect(driver).to receive(:exec).with(
-                        "adb shell \"export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.oracle.Driver 'string.Klazz' 'run' 'java.lang.String:[104,101,108,108,111,32,115,116,114,105,110,103]'\"; echo $?"
+                    allow(driver).to receive(:adb)
+                    expect(driver).to receive(:adb).with(
+                        "export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.oracle.Driver 'string.Klazz' 'run' java.lang.String:[104,101,108,108,111,32,115,116,114,105,110,103]"
                     )
                     subject
                 }

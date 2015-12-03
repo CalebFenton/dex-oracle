@@ -67,6 +67,8 @@ class Undexguard < Plugin
 
   def self.apply_batch(driver, method_to_batch_info)
     all_batches = method_to_batch_info.values.collect { |e| e.keys }.flatten
+    return false if all_batches.empty?
+
     outputs = driver.run_batch(all_batches)
 
     made_changes = false

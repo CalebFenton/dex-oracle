@@ -23,10 +23,37 @@ class Driver
     @cache = {}
   end
 
+  def install(dex)
+    raise 'Unable to find Java on the path.' unless Utility.which('java')
+
+    begin
+      # Merge driver and target dex file
+      tf = Tempfile.new(['oracle-driver', '.dex'])
+      cmd = "java -cp resources/dx.jar com.android.dx.merge.DexMerger #{tf.path} #{dex.path} resources/driver.dex"
+      `#{cmd}`
+
+      # Zip merged dex and push to device
+      tz = Tempfile.new(['oracle-driver', '.zip'])
+      Utility.create_zip(tz.path, { 'classes.dex' => tf })
+      `adb push #{tz.path} #{DRIVER_DIR}/od.zip`
+    ensure
+      tf.close
+      tf.unlink
+      tz.close
+      tz.unlink
+    end
+  end
+
   def run_single(class_name, signature, *args)
     method = SmaliMethod.new(class_name, signature)
     cmd = build_command(method.class, method.name, method.parameters, args)
     output = adb(cmd)
+  end
+
+  def run_batch(batch)
+    push_batch_targets(batch)
+    adb("#{@cmd_stub} @#{DRIVER_DIR}/od-targets.json", false)
+    pull_batch_outputs
   end
 
   def make_batch_item(class_name, signature, *args)
@@ -36,28 +63,36 @@ class Driver
       methodName: method.name,
       arguments: Driver.build_arguments(method.parameters, args)
     }
-    # Identifiers are used to map individual inputs to individual outputs
+    # Identifiers are used to map individual inputs to outputs
     id = Digest::SHA256.hexdigest(item.to_json)
     item[:id] = id
 
     item
   end
 
-  def run_batch(batch)
-    `adb shell rm #{DRIVER_DIR}/od-targets.json`
-    tf = Tempfile.new(['oracle-targets', '.json'])
-    tf << batch.to_json
-    tf.flush
-    `adb push #{tf.path} #{DRIVER_DIR}/od-targets.json`
+  private
 
-    adb("#{@cmd_stub} @#{DRIVER_DIR}/od-targets.json", false)
-    `adb pull #{DRIVER_DIR}/od-output.json #{tf.path}`
-    `adb shell rm #{DRIVER_DIR}/od-output.json`
-    outputs = JSON.parse(File.read(tf.path))
-    tf.close
-    tf.unlink
+  def push_batch_targets(batch)
+    target_file = Tempfile.new(['oracle-targets', '.json'])
+    target_file << batch.to_json
+    target_file.flush
+    Driver.exec("adb push #{target_file.path} #{DRIVER_DIR}/od-targets.json")
+    target_file.close
+    target_file.unlink
+  end
 
+  def pull_batch_outputs
+    output_file = Tempfile.new(['oracle-output', '.json'])
+    Driver.exec("adb pull #{DRIVER_DIR}/od-output.json #{output_file.path}")
+    Driver.exec("adb shell rm #{DRIVER_DIR}/od-output.json")
+    outputs = JSON.parse(File.read(output_file.path))
+    output_file.close
+    output_file.unlink
     outputs
+  end
+
+  def self.exec(cmd)
+    `#{cmd}`
   end
 
   def adb(cmd, cache = true)
@@ -93,29 +128,6 @@ class Driver
 
     output
   end
-
-  def install(dex)
-    raise 'Unable to find Java on the path.' unless Utility.which('java')
-
-    begin
-      # Merge driver and target dex file
-      tf = Tempfile.new(['oracle-driver', '.dex'])
-      cmd = "java -cp resources/dx.jar com.android.dx.merge.DexMerger #{tf.path} #{dex.path} resources/driver.dex"
-      `#{cmd}`
-
-      # Zip merged dex and push to device
-      tz = Tempfile.new(['oracle-driver', '.zip'])
-      Utility.create_zip(tz.path, { 'classes.dex' => tf })
-      `adb push #{tz.path} #{DRIVER_DIR}/od.zip`
-    ensure
-      tf.close
-      tf.unlink
-      tz.close
-      tz.unlink
-    end
-  end
-
-  private
 
   def self.unescape(str)
     str.gsub(UNESCAPE_REGEX) do

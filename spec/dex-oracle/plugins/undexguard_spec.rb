@@ -2,39 +2,36 @@ require 'spec_helper'
 
 describe Undexguard do
     let(:data_path) { 'spec/data/undexguard' }
-    let(:smali_file) { SmaliFile.new(file_path) }
-    let(:driver) { instance_double("Driver") }
+    let(:smali_files) { [SmaliFile.new(file_path)] }
+    let(:method) { smali_files.first.methods.first }
+    let(:driver) { instance_double('Driver') }
+    let(:outputs) { {method => 1} }
+    let(:batch) { {:id => '123'} }
 
-    describe 'string lookups with 3 int' do
+    describe '.lookup_strings_3int' do
         let(:file_path) { "#{data_path}/string_lookup_3int.smali" }
-        subject { smali_file.methods.first }
-        its(:body) {
-            allow(driver).to receive(:run_single).and_return('"looked up"')
-            expect(driver).to receive(:run_single).with('org/cf/StringLookup', 'lookup(III)', 0, 1, 2)
-            Undexguard.process(driver, smali_file)
-            should eq "\n    .locals 3\n\n    const-string v0, \"looked up\"\n\n    return-void\n"
+        subject { Undexguard.lookup_strings_3int(driver, method) }
+        it {
+            expect(driver).to receive(:make_batch_item).with('org/cf/StringLookup', 'lookup(III)', 0, 1, 2).and_return(batch)
+            should == {batch => [["const/4 v0, 0x0\n\n    const/4 v1, 0x1\n\n    const/4 v2, 0x2\n\n    invoke-static {v0, v1, v2}, Lorg/cf/StringLookup;->lookup(III)Ljava/lang/String;\n\n    move-result-object v0", "v0"]]}
         }
     end
 
-    describe 'string lookups with 1 int' do
+    describe '.lookup_strings_1int' do
         let(:file_path) { "#{data_path}/string_lookup_1int.smali" }
-        subject { smali_file.methods.first }
-        its(:body) {
-            allow(driver).to receive(:run_single).and_return('"looked up"')
-            expect(driver).to receive(:run_single).with('org/cf/StringLookup', 'lookup(I)', 0)
-            Undexguard.process(driver, smali_file)
-            should eq "\n    .locals 1\n\n    const-string v0, \"looked up\"\n\n    return-void\n"
+        subject { Undexguard.lookup_strings_1int(driver, method) }
+        it {
+            expect(driver).to receive(:make_batch_item).with('org/cf/StringLookup', 'lookup(I)', 0).and_return(batch)
+            should == {batch => [["const/4 v0, 0x0\n\n    invoke-static {v0}, Lorg/cf/StringLookup;->lookup(I)Ljava/lang/String;\n\n    move-result-object v0", "v0"]]}
         }
     end
 
-    describe 'string decryption' do
+    describe '.decrypt_strings' do
         let(:file_path) { "#{data_path}/string_decrypt.smali" }
-        subject { smali_file.methods.first }
-        its(:body) {
-            allow(driver).to receive(:run_single).and_return('"decrypted"')
-            expect(driver).to receive(:run_single).with('org/cf/StringDecrypt', 'decrypt(Ljava/lang/String;)', 'encrypted')
-            Undexguard.process(driver, smali_file)
-            should eq "\n    .locals 1\n\n    const-string v0, \"decrypted\"\n\n    return-void\n"
+        subject { Undexguard.decrypt_strings(driver, method) }
+        it {
+            expect(driver).to receive(:make_batch_item).with('org/cf/StringDecrypt', 'decrypt(Ljava/lang/String;)', 'encrypted').and_return(batch)
+            should == {batch => [["const-string v0, \"encrypted\"\n\n    invoke-static {v0}, Lorg/cf/StringDecrypt;->decrypt(Ljava/lang/String;)Ljava/lang/String;\n\n    move-result-object v0", "v0"]]}
         }
     end
 end
