@@ -2,4 +2,4 @@
 
 cd driver
 ./gradlew clean fatjar
-dx --dex --output=../resources/driver.dex build/libs/driver.jar
+dx --dex --output=../res/driver.dex build/libs/driver.jar
