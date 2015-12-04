@@ -7,6 +7,8 @@ require_relative '../lib/dex-oracle/driver'
 
 options = {
     device_id: ENV['ANDROID_SERIAL'] || '',
+    include_types: nil,
+    exclude_types: nil,
 }
 
 optparse = OptionParser.new do |opts|
@@ -19,6 +21,16 @@ optparse = OptionParser.new do |opts|
   opts.on('-s', '--specific-device ANDROID_SERIAL',
     "Device ID for driver execution, default=\"#{options[:device_id]}\"") do |id|
     options[:device_id] = id
+  end
+
+  opts.on('-i', '--include PATTERN',
+    "Only optimize methods and classes matching the pattern, e.g. Ldune;->melange()V") do |types|
+    options[:include_types] = Regexp.new(types)
+  end
+
+  opts.on('-e', '--exclude PATTERN',
+    "Exclude these types from optimization; including overrides") do |types|
+    options[:exclude_types] = Regexp.new(types)
   end
 end
 
@@ -35,7 +47,7 @@ input = ARGV[0]
 smali_input = SmaliInput.new(input)
 driver = Driver.new(options[:device_id])
 driver.install(smali_input.out_dex)
-oracle = Oracle.new(smali_input.dir, driver)
+oracle = Oracle.new(smali_input.dir, driver, options[:include_types], options[:exclude_types])
 oracle.divine
 
 smali_input.finish

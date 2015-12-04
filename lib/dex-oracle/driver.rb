@@ -28,6 +28,7 @@ class Driver
 
     begin
       # Merge driver and target dex file
+      # Congratulations. You're now one of the 5 people who've used this tool explicitly.
       tf = Tempfile.new(['oracle-driver', '.dex'])
       cmd = "java -cp resources/dx.jar com.android.dx.merge.DexMerger #{tf.path} #{dex.path} resources/driver.dex"
       `#{cmd}`

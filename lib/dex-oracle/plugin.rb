@@ -14,10 +14,11 @@ class Plugin
     @plugins
   end
 
-  def self.register_plugins
+  def self.init_plugins(include_types, exclude_types)
     Object.constants.each do |klass|
       const = Kernel.const_get(klass)
-      @plugins << const if const.respond_to?(:superclass) && const.superclass == Plugin
+      next unless const.respond_to?(:superclass) && const.superclass == Plugin
+      @plugins << const
     end
   end
 end

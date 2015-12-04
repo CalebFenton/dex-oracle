@@ -44,20 +44,16 @@ class Undexguard < Plugin
           'invoke-direct {.+?\(\[B\)V' <<
           ')')
 
-  def self.process(driver, smali_files)
+  def self.process(driver, smali_files, methods)
     method_to_batch_info = {}
-    smali_files.each do |smali_file|
-      smali_file.methods.each do |method|
-        #next unless method.descriptor =~ %r|Lcom/android/system/admin/ICcIIlo;->test|
-
-        logger.debug("Undexguarding #{method.descriptor}")
-        batch_info = {}
-        batch_info.merge!(Undexguard.lookup_strings_3int(driver, method))
-        batch_info.merge!(Undexguard.lookup_strings_1int(driver, method))
-        batch_info.merge!(Undexguard.decrypt_strings(driver, method))
-        batch_info.map { |k, v| v.uniq! }
-        method_to_batch_info[method] = batch_info unless batch_info.empty?
-      end
+    methods.each do |method|
+      logger.debug("Undexguarding #{method.descriptor}")
+      batch_info = {}
+      batch_info.merge!(Undexguard.lookup_strings_3int(driver, method))
+      batch_info.merge!(Undexguard.lookup_strings_1int(driver, method))
+      batch_info.merge!(Undexguard.decrypt_strings(driver, method))
+      batch_info.map { |k, v| v.uniq! }
+      method_to_batch_info[method] = batch_info unless batch_info.empty?
     end
 
     Undexguard.apply_batch(driver, method_to_batch_info)
