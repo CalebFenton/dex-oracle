@@ -14,6 +14,8 @@ class Oracle
   end
 
   def divine
+    puts "Optimizing #{@methods.size} methods over #{@smali_files.size} smali files."
+
     made_changes = false
     loop do
       sweep_changes = false

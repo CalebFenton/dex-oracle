@@ -23,7 +23,9 @@ class SmaliInput
   def self.compile(dir, out_dex = nil)
     raise 'Smali could not be found on the path.' if Utility.which('smali').nil?
     out_dex = Tempfile.new(['oracle', '.dex']) if out_dex.nil?
-    SmaliInput.exec("smali #{dir} -o #{out_dex.path}")
+    exit_code = SmaliInput.exec("smali #{dir} -o #{out_dex.path}")
+    # Remember kids, if you make a CLI, exit with non-zero status for failures
+    raise 'Crap, smali compilation failed.' if $?.exitstatus != 0
     out_dex
   end
 

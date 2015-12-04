@@ -4,6 +4,10 @@ require 'optparse'
 require_relative '../lib/oracle'
 require_relative '../lib/dex-oracle/smali_input'
 require_relative '../lib/dex-oracle/driver'
+require_relative '../lib/dex-oracle/utility'
+require_relative '../lib/dex-oracle/logging'
+
+include Logging
 
 options = {
     device_id: ENV['ANDROID_SERIAL'] || '',
@@ -23,14 +27,22 @@ optparse = OptionParser.new do |opts|
     options[:device_id] = id
   end
 
-  opts.on('-i', '--include PATTERN',
-    "Only optimize methods and classes matching the pattern, e.g. Ldune;->melange()V") do |types|
-    options[:include_types] = Regexp.new(types)
+  opts.on('-i', '--include PATTERN', Regexp,
+    'Only optimize methods and classes matching the pattern, e.g. Ldune;->melange\(\)V') do |regex|
+    options[:include_types] = regex
   end
 
-  opts.on('-e', '--exclude PATTERN',
-    "Exclude these types from optimization; including overrides") do |types|
-    options[:exclude_types] = Regexp.new(types)
+  opts.on('-e', '--exclude PATTERN', Regexp,
+    "Exclude these types from optimization; including overrides") do |regex|
+    options[:exclude_types] = regex
+  end
+
+  opts.on('-v', '--verbose', "Be verbose") do
+    logger.level = Logger::INFO
+  end
+
+  opts.on('-V', '--vverbose', "Be very verbose") do
+    logger.level = Logger::DEBUG
   end
 end
 
@@ -41,12 +53,23 @@ if ARGV.size < 1
   exit(-1)
 end
 
-start = Time.now
+unless Utility.which('adb')
+  logger.error 'Unable to find adb command on path. Please make sure you have adb installed and setup.'
+  exit(-1)
+end
 
+unless `adb devices`.strip != 'List of devices attached'
+  logger.error 'It appears you have no devices running. Please start an emulator or plug in a test device.'
+  exit(-1)
+end
+
+start = Time.now
 input = ARGV[0]
 smali_input = SmaliInput.new(input)
+
 driver = Driver.new(options[:device_id])
 driver.install(smali_input.out_dex)
+
 oracle = Oracle.new(smali_input.dir, driver, options[:include_types], options[:exclude_types])
 oracle.divine
 

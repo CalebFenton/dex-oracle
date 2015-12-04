@@ -1,8 +1,12 @@
 require 'json'
 require 'digest'
+require 'Open3'
+require_relative 'logging'
 require_relative 'utility'
 
 class Driver
+  include Logging
+
   UNESCAPES = {
       'a' => "\x07", 'b' => "\x08", 't' => "\x09",
       'n' => "\x0a", 'v' => "\x0b", 'f' => "\x0c",
@@ -31,13 +35,13 @@ class Driver
       # Congratulations. You're now one of the 5 people who've used this tool explicitly.
       tf = Tempfile.new(['oracle-driver', '.dex'])
       cmd = "java -cp resources/dx.jar com.android.dx.merge.DexMerger #{tf.path} #{dex.path} resources/driver.dex"
-      `#{cmd}`
+      Driver.exec("#{cmd}")
 
       # Zip merged dex and push to device
       tz = Tempfile.new(['oracle-driver', '.zip'])
       Utility.create_zip(tz.path, { 'classes.dex' => tf })
-      `adb push #{tz.path} #{DRIVER_DIR}/od.zip`
-    ensure
+      Driver.exec("adb push #{tz.path} #{DRIVER_DIR}/od.zip")
+    #ensure
       tf.close
       tf.unlink
       tz.close
@@ -92,20 +96,26 @@ class Driver
     outputs
   end
 
-  def self.exec(cmd)
-    `#{cmd}`
+  def self.exec(cmd, silent = true)
+    unless silent
+      `#{cmd}`
+    else
+      Open3.popen3(cmd) do |stdin, stdout, stderr, thread|
+        stdout.read
+      end
+    end
   end
 
   def adb(cmd, cache = true)
-    puts "cmd = #{cmd}"
+    logger.debug("cmd = #{cmd}")
 
     output = nil
     full_cmd = @adb_base % cmd
     if cache
-      @cache[cmd] = `#{full_cmd}`.rstrip unless @cache.has_key?(cmd)
+      @cache[cmd] = Driver.exec(full_cmd).rstrip unless @cache.has_key?(cmd)
       output = @cache[cmd]
     else
-      output = `#{full_cmd}`.rstrip
+      output = Driver.exec(full_cmd).rstrip
     end
 
     output_lines = output.split("\n")
@@ -119,13 +129,13 @@ class Driver
 
     # The driver writes any actual exceptions to the filesystem
     # Need to check to make sure the output value is legitimate
-    exception = `adb shell cat #{DRIVER_DIR}/od-exception.txt`.strip
+    exception = Driver.exec("adb shell cat #{DRIVER_DIR}/od-exception.txt").strip
     unless exception.end_with?('No such file or directory')
-      `adb shell rm #{DRIVER_DIR}/od-exception.txt`
+      Driver.exec("adb shell rm #{DRIVER_DIR}/od-exception.txt")
       raise exception
     end
 
-    puts "output = #{output}"
+    logger.debug("output = #{output}")
 
     output
   end

@@ -49,7 +49,7 @@ class Undexguard < Plugin
   def self.process(driver, smali_files, methods)
     method_to_batch_info = {}
     methods.each do |method|
-      logger.debug("Undexguarding #{method.descriptor}")
+      logger.info("Undexguarding #{method.descriptor}")
       batch_info = {}
       batch_info.merge!(Undexguard.lookup_strings_3int(driver, method))
       batch_info.merge!(Undexguard.lookup_strings_1int(driver, method))

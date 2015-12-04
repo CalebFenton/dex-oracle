@@ -1,8 +1,11 @@
 require_relative 'smali_field'
 require_relative 'smali_method'
+require_relative 'logging'
 
 class SmaliFile
   attr_reader :class, :super, :interfaces, :methods, :fields, :file_path, :content
+
+  include Logging
 
   ACCESSOR = /(?:interface|public|protected|private|abstract|static|final|synchronized|transient|volatile|native|strictfp|synthetic|enum|annotation)/
   TYPE = /(?:[IJFDZBCV]|L[^;]+;)/
@@ -21,7 +24,7 @@ class SmaliFile
   def update
     @methods.each do |m|
       next unless m.modified
-      puts "Updating!! #{m}"
+      logger.debug("Updating method: #{m}")
       update_method(m)
       m.modified = false
     end
