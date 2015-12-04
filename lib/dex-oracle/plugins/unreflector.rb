@@ -2,6 +2,7 @@ require 'logger'
 
 class Unreflector < Plugin
   include CommonRegex
+
   CLASS_FOR_NAME = 'invoke-static \{[vp]\d+\}, Ljava\/lang\/Class;->forName\(Ljava\/lang\/String;\)Ljava\/lang\/Class;'
 
   CONST_CLASS_REGEX = Regexp.new(

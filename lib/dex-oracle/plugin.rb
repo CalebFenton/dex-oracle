@@ -21,4 +21,36 @@ class Plugin
       @plugins << const
     end
   end
+
+  def self.apply_batch(driver, method_to_batch_info, modifier)
+    all_batches = method_to_batch_info.values.collect { |e| e.keys }.flatten
+    return false if all_batches.empty?
+
+    outputs = driver.run_batch(all_batches)
+
+    made_changes = false
+    method_to_batch_info.each do |method, batch_info|
+      batch_info.each do |item, infos|
+        status, output = outputs[item[:id]]
+        unless status == 'success'
+          logger.warn(output)
+          next
+        end
+
+        infos.each do |original, out_reg|
+          modification = modifier.call(original, output, out_reg)
+          #puts "modification #{original.inspect} = #{modification.inspect}"
+
+          # Go home Ruby, you're drunk.
+          modification.gsub!('\\') { '\\\\' }
+          method.body.gsub!(original) { modification }
+        end
+
+        made_changes = true
+        method.modified = true
+      end
+    end
+
+    made_changes
+  end
 end

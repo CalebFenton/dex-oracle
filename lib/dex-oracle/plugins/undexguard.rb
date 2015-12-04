@@ -44,6 +44,8 @@ class Undexguard < Plugin
           'invoke-direct {.+?\(\[B\)V' <<
           ')')
 
+  MODIFIER = lambda { |original, output, out_reg| "const-string #{out_reg}, #{output}" }
+
   def self.process(driver, smali_files, methods)
     method_to_batch_info = {}
     methods.each do |method|
@@ -56,41 +58,10 @@ class Undexguard < Plugin
       method_to_batch_info[method] = batch_info unless batch_info.empty?
     end
 
-    Undexguard.apply_batch(driver, method_to_batch_info)
+    Plugin.apply_batch(driver, method_to_batch_info, MODIFIER)
   end
 
   private
-
-  def self.apply_batch(driver, method_to_batch_info)
-    all_batches = method_to_batch_info.values.collect { |e| e.keys }.flatten
-    return false if all_batches.empty?
-
-    outputs = driver.run_batch(all_batches)
-
-    made_changes = false
-    method_to_batch_info.each do |method, batch_info|
-      batch_info.each do |item, infos|
-        status, output = outputs[item[:id]]
-        unless status == 'success'
-          logger.warn(output)
-          next
-        end
-
-        infos.each do |original, out_reg|
-          modification = "const-string #{out_reg}, #{output}"
-          #puts "modification #{original.inspect} = #{modification.inspect}"
-          # Go home Ruby, you're drunk.
-          modification.gsub!('\\') { '\\\\' }
-          method.body.gsub!(original) { modification }
-        end
-
-        made_changes = true
-        method.modified = true
-      end
-    end
-
-    made_changes
-  end
 
   def self.lookup_strings_3int(driver, method)
     batch_info = {}
