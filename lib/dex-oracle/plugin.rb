@@ -1,4 +1,3 @@
-require 'set'
 
 class Plugin
   module CommonRegex
@@ -8,7 +7,7 @@ class Plugin
     MOVE_RESULT_OBJECT = 'move-result-object ([vp]\d+)'
   end
 
-  @plugins = Set.new
+  @plugins = []
 
   def self.plugins
     @plugins
@@ -22,22 +21,31 @@ class Plugin
     end
   end
 
-  def self.apply_batch(driver, method_to_batch_info, modifier)
-    all_batches = method_to_batch_info.values.collect { |e| e.keys }.flatten
+  # method_to_target_to_context -> { method: [target_to_context] }
+  # target_to_context -> [ [target, context] ]
+  # target = Driver.make_target, has :id key
+  # context = [ [original, out_reg] ]
+  def self.apply_batch(driver, method_to_target_to_contexts, modifier)
+    all_batches = method_to_target_to_contexts.values.collect { |e| e.keys }.flatten
     return false if all_batches.empty?
 
-    outputs = driver.run_batch(all_batches)
+    target_id_to_output = driver.run_batch(all_batches)
+    apply_outputs(target_id_to_output, method_to_target_to_contexts, modifier)
+  end
 
+  # target_id_to_output -> { id: [status, output] }
+  # status = (success|failure)
+  def self.apply_outputs(target_id_to_output, method_to_target_to_contexts, modifier)
     made_changes = false
-    method_to_batch_info.each do |method, batch_info|
-      batch_info.each do |item, infos|
-        status, output = outputs[item[:id]]
+    method_to_target_to_contexts.each do |method, target_to_contexts|
+      target_to_contexts.each do |target, contexts|
+        status, output = target_id_to_output[target[:id]]
         unless status == 'success'
           logger.warn(output)
           next
         end
 
-        infos.each do |original, out_reg|
+        contexts.each do |original, out_reg|
           modification = modifier.call(original, output, out_reg)
           #puts "modification #{original.inspect} = #{modification.inspect}"
 

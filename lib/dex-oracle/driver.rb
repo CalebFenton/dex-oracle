@@ -16,6 +16,8 @@ class Driver
   UNESCAPE_REGEX = /\\(?:([#{UNESCAPES.keys.join}])|u([\da-fA-F]{4}))|\\0?x([\da-fA-F]{2})/
   DRIVER_DIR = '/data/local'
   DRIVER_CLASS = 'org.cf.oracle.Driver'
+  DX_PATH = 'res/dx.jar'
+  DRIVER_DEX_PATH = 'res/driver.dex'
 
   def initialize(device_id)
     @device_id = device_id
@@ -33,11 +35,15 @@ class Driver
     begin
       # Merge driver and target dex file
       # Congratulations. You're now one of the 5 people who've used this tool explicitly.
+      logger.debug("Merging #{dex.path} and driver dex ...")
+      raise "#{DX_PATH} does not exist and is required for DexMerger" unless File.exist?(DX_PATH)
+      raise "#{DRIVER_DEX_PATH} does not exist" unless File.exist?(DRIVER_DEX_PATH)
       tf = Tempfile.new(['oracle-driver', '.dex'])
-      cmd = "java -cp resources/dx.jar com.android.dx.merge.DexMerger #{tf.path} #{dex.path} resources/driver.dex"
+      cmd = "java -cp #{DX_PATH} com.android.dx.merge.DexMerger #{tf.path} #{dex.path} #{DRIVER_DEX_PATH}"
       Driver.exec("#{cmd}")
 
       # Zip merged dex and push to device
+      logger.debug("Pushing merged driver to device ...")
       tz = Tempfile.new(['oracle-driver', '.zip'])
       Utility.create_zip(tz.path, { 'classes.dex' => tf })
       Driver.exec("adb push #{tz.path} #{DRIVER_DIR}/od.zip")
@@ -61,18 +67,17 @@ class Driver
     pull_batch_outputs
   end
 
-  def make_batch_item(class_name, signature, *args)
+  def make_target(class_name, signature, *args)
     method = SmaliMethod.new(class_name, signature)
-    item = {
+    target = {
       className: method.class.gsub('/', '.'),
       methodName: method.name,
       arguments: Driver.build_arguments(method.parameters, args)
     }
     # Identifiers are used to map individual inputs to outputs
-    id = Digest::SHA256.hexdigest(item.to_json)
-    item[:id] = id
+    target[:id] = Digest::SHA256.hexdigest(target.to_json)
 
-    item
+    target
   end
 
   private
@@ -81,6 +86,7 @@ class Driver
     target_file = Tempfile.new(['oracle-targets', '.json'])
     target_file << batch.to_json
     target_file.flush
+    logger.debug("Pushing #{batch.size} targets to device ...")
     Driver.exec("adb push #{target_file.path} #{DRIVER_DIR}/od-targets.json")
     target_file.close
     target_file.unlink
@@ -88,15 +94,18 @@ class Driver
 
   def pull_batch_outputs
     output_file = Tempfile.new(['oracle-output', '.json'])
+    logger.debug("Pulling batch results from device ...")
     Driver.exec("adb pull #{DRIVER_DIR}/od-output.json #{output_file.path}")
     Driver.exec("adb shell rm #{DRIVER_DIR}/od-output.json")
     outputs = JSON.parse(File.read(output_file.path))
+    logger.debug("Pulled #{outputs.size} outputs.")
     output_file.close
     output_file.unlink
     outputs
   end
 
   def self.exec(cmd, silent = true)
+    logger.debug(cmd)
     unless silent
       `#{cmd}`
     else

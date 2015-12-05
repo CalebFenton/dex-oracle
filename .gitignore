@@ -1,5 +1,5 @@
 sandbox/
 *.apk
 *.dex
-
+*.json
 Gemfile.lock
