@@ -45,7 +45,6 @@ optparse = OptionParser.new do |opts|
     logger.level = Logger::DEBUG
   end
 end
-
 optparse.parse!
 
 if ARGV.size < 1

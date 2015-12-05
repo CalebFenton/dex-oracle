@@ -1,4 +1,4 @@
 source 'https://rubygems.org'
-gemspec
+gemspec :name => 'dex-oracle'
 
 gem 'rubocop', require: false
