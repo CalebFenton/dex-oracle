@@ -28,7 +28,7 @@ class SmaliFile
       update_method(m)
       m.modified = false
     end
-    File.open(@file_path, 'w') { |f| f.write(@content) }
+    File.open(@file_path, 'w') { |f| f.write(@content.gsub('\\', '\\\\\\\\')) }
   end
 
   def to_s

@@ -47,7 +47,7 @@ class Driver
       tz = Tempfile.new(['oracle-driver', '.zip'])
       Utility.create_zip(tz.path, { 'classes.dex' => tf })
       Driver.exec("adb push #{tz.path} #{DRIVER_DIR}/od.zip")
-    #ensure
+    ensure
       tf.close
       tf.unlink
       tz.close
@@ -55,7 +55,7 @@ class Driver
     end
   end
 
-  def run_single(class_name, signature, *args)
+  def run(class_name, signature, *args)
     method = SmaliMethod.new(class_name, signature)
     cmd = build_command(method.class, method.name, method.parameters, args)
     output = adb(cmd)
@@ -86,7 +86,7 @@ class Driver
     target_file = Tempfile.new(['oracle-targets', '.json'])
     target_file << batch.to_json
     target_file.flush
-    logger.debug("Pushing #{batch.size} targets to device ...")
+    logger.info("Pushing #{batch.size} targets to device ...")
     Driver.exec("adb push #{target_file.path} #{DRIVER_DIR}/od-targets.json")
     target_file.close
     target_file.unlink
@@ -146,7 +146,7 @@ class Driver
 
     logger.debug("output = #{output}")
 
-    output
+    output.rstrip
   end
 
   def self.unescape(str)
@@ -172,14 +172,22 @@ class Driver
 
   def self.build_arguments(parameters, args)
     parameters.map.with_index do |o, i|
-      if o[0] == 'L'
-        obj = o[1..-2].gsub('/', '.')
-        arg = args[i]
-        arg = "[#{Driver.unescape(arg).bytes.to_a.join(',')}]" if obj == 'java.lang.String'
-        "#{obj}:#{arg}"
-      else
-        "#{o}:#{args[i]}"
+      build_argument(o, args[i])
+    end
+  end
+
+  def self.build_argument(parameter, argument)
+    if parameter[0] == 'L'
+      java_type = parameter[1..-2].gsub('/', '.')
+      if java_type == 'java.lang.String'
+        # Need to unescape smali string to get the actual string
+        # Converting to bytes just avoids any weird non-printable characters nonsense
+        argument = "[#{Driver.unescape(argument).bytes.to_a.join(',')}]"
       end
+      "#{java_type}:#{argument}"
+    else
+      argument = (argument == '1' ? 'true' : 'false') if parameter == 'Z'
+      "#{parameter}:#{argument}"
     end
   end
 end

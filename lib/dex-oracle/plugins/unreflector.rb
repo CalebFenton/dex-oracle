@@ -39,7 +39,6 @@ class Unreflector < Plugin
           MOVE_RESULT_OBJECT <<
           ')')
 
-
   def self.process(driver, smali_files, methods)
     made_changes = false
     methods.each do |method|

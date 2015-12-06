@@ -50,6 +50,7 @@ class Plugin
           #puts "modification #{original.inspect} = #{modification.inspect}"
 
           # Go home Ruby, you're drunk.
+          p modification
           modification.gsub!('\\') { '\\\\' }
           method.body.gsub!(original) { modification }
         end
