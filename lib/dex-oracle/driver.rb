@@ -58,6 +58,7 @@ class Driver
   def run(class_name, signature, *args)
     method = SmaliMethod.new(class_name, signature)
     cmd = build_command(method.class, method.name, method.parameters, args)
+    output = nil
     output = adb(cmd)
   end
 
@@ -86,7 +87,7 @@ class Driver
     target_file = Tempfile.new(['oracle-targets', '.json'])
     target_file << batch.to_json
     target_file.flush
-    logger.info("Pushing #{batch.size} targets to device ...")
+    logger.info("Pushing #{batch.size} method targets to device ...")
     Driver.exec("adb push #{target_file.path} #{DRIVER_DIR}/od-targets.json")
     target_file.close
     target_file.unlink
@@ -115,37 +116,48 @@ class Driver
     end
   end
 
-  def adb(cmd, cache = true)
+  def adb(cmd, batch = true)
     logger.debug("cmd = #{cmd}")
 
     output = nil
     full_cmd = @adb_base % cmd
-    if cache
+    if batch
       @cache[cmd] = Driver.exec(full_cmd).rstrip unless @cache.has_key?(cmd)
       output = @cache[cmd]
     else
       output = Driver.exec(full_cmd).rstrip
     end
 
-    output_lines = output.split("\n")
+    output_lines = output.split(/\r?\n/)
     exit_code = output_lines.last.to_i
     if exit_code != 0
       # Non zero exit code would only imply adb command itself was flawed
       # app_process, dalvikvm, etc. don't propigate exit codes back
       raise "Command failed with #{exit_code}: #{full_cmd}\nOutput: #{output}"
     end
-    output = output_lines[0..-2].join("\n")
 
     # The driver writes any actual exceptions to the filesystem
     # Need to check to make sure the output value is legitimate
+    logger.debug("Checking if execution had any exceptions ...")
     exception = Driver.exec("adb shell cat #{DRIVER_DIR}/od-exception.txt").strip
     unless exception.end_with?('No such file or directory')
+      logger.debug("No exceptions!")
       Driver.exec("adb shell rm #{DRIVER_DIR}/od-exception.txt")
       raise exception
     end
 
+    # Successful driver run should include driver header
+    header = output_lines[0]
+    if header != '===ORACLE DRIVER OUTPUT==='
+      p header
+      p cmd
+    end
+    raise "Unexpected driver output: '#{output}'" if header != '===ORACLE DRIVER OUTPUT==='
+    output = output_lines[1..-2].join("\n")
+
     logger.debug("output = #{output}")
 
+    sleep 0.5
     output.rstrip
   end
 

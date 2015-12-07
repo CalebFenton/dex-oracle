@@ -28,6 +28,15 @@ class Undexguard < Plugin
           MOVE_RESULT_OBJECT <<
           ')')
 
+  BYTES_DECRYPT = Regexp.new(
+      '^[ \t]*(' <<
+          CONST_STRING << '\s+' <<
+          'invoke-virtual \{[vp]\d+\}, Ljava\/lang\/String;->getBytes\(\)\[B\s+' <<
+          'move-result-object [vp]\d+\s+' <<
+          'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(\[B\))Ljava/lang/String;\s+' <<
+          MOVE_RESULT_OBJECT <<
+        ')')
+
   MULTI_BYTES_DECRYPT = Regexp.new(
       '^[ \t]*(' <<
           CONST_STRING << '\s+' <<
@@ -41,31 +50,6 @@ class Undexguard < Plugin
           'move-result-object [vp]\d+\s+' <<
           'invoke-direct \{[vp]\d+, [vp]\d+\}, Ljava\/lang\/String;-><init>\(\[B\)V' <<
           ')')
-
-  STRING_DECRYPT_ALT = Regexp.new(
-      '^[ \t]*(' <<
-          CONST_STRING << '\s+' <<
-          'new-instance ([vp]\d+), L[^;]+;\s+' <<
-          '(?:move-object(?:\/from16)? [vp]\d+, [vp]\d+\s+)?' <<
-          'invoke-static {.+?\[B\s+' <<
-          'move-result-object [vp]\d+\s+' <<
-          CONST_STRING << '\s+' <<
-          'invoke-virtual {[vp]\d+}, Ljava\/lang\/String;->getBytes\(\)\[B\s+' <<
-          'move-result-object [vp]\d+\s+' <<
-          'invoke-static {.+?\/String;\s+' << 'move-result-object [vp]\d+\s+' <<
-          'invoke-static {.+?\[B\s+' << 'move-result-object [vp]\d+\s+' <<
-          'invoke-static {.+?\[B\s+' << 'move-result-object [vp]\d+\s+' <<
-          'invoke-direct {.+?\(\[B\)V' <<
-          ')')
-
-  BYTES_DECRYPT = Regexp.new(
-      '^[ \t]*(' <<
-          CONST_STRING << '\s+' <<
-          'invoke-virtual \{[vp]\d+\}, Ljava\/lang\/String;->getBytes\(\)\[B\s+' <<
-          'move-result-object [vp]\d+\s+' <<
-          'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(\[B\))Ljava/lang/String;\s+' <<
-          MOVE_RESULT_OBJECT <<
-        ')')
 
   MODIFIER = lambda { |original, output, out_reg| "const-string #{out_reg}, #{output}" }
 
@@ -161,25 +145,27 @@ class Undexguard < Plugin
   end
 
   def self.decrypt_multi_bytes(driver, method)
-    puts MULTI_BYTES_DECRYPT
+    target_to_contexts = {}
+    target_id_to_output = {}
     matches = method.body.scan(MULTI_BYTES_DECRYPT)
     matches.each do |original, iv_str, out_reg, iv_class_name, iv_method_signature,
         iv2_str, iv2_class_name, iv2_method_signature,
         dec_class_name, dec_method_signature|
 
-
       iv_bytes = driver.run(iv_class_name, iv_method_signature, iv_str)
       enc_bytes = driver.run(iv2_class_name, iv2_method_signature, iv_bytes, iv2_str)
       dec_bytes = driver.run(dec_class_name, dec_method_signature, enc_bytes)
-
-      p dec_bytes
       dec_array = array_string_to_array(dec_bytes)
-      p dec_array
-      p dec_array.pack('U*')
+      dec_string = dec_array.pack('U*')
 
-      exit -1
+      target = { id: Digest::SHA256.hexdigest(original) }
+      target_id_to_output[target[:id]] = ['success', "\"#{dec_string}\""]
+      target_to_contexts[target] = [] unless target_to_contexts.has_key?(target)
+      target_to_contexts[target] << [original, out_reg]
     end
 
-    false
+    method_to_target_to_contexts = { method => target_to_contexts }
+    modifier = lambda { |original, output, out_reg| "const-string #{out_reg}, #{output}" }
+    Plugin.apply_outputs(target_id_to_output, method_to_target_to_contexts, modifier)
   end
 end

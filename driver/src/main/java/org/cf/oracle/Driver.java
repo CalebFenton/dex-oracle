@@ -21,6 +21,7 @@ public class Driver {
 
     private static final String DRIVER_DIR = "/data/local";
 
+    private static final String OUTPUT_HEADER = "===ORACLE DRIVER OUTPUT===\n";
     private static final String EXCEPTION_LOG = DRIVER_DIR + "/od-exception.txt";
     private static final String OUTPUT_FILE = DRIVER_DIR + "/od-output.json";
     private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
@@ -99,7 +100,7 @@ public class Driver {
             }
 
             if (output != null) {
-                System.out.println(output);
+                System.out.println(OUTPUT_HEADER + output);
             }
         } else {
             Map<String, String[]> idToOutput = new HashMap<String, String[]>();
@@ -126,6 +127,8 @@ public class Driver {
             } catch (FileNotFoundException | UnsupportedEncodingException e) {
                 die("Unable to write output to " + OUTPUT_FILE, e);
             }
+
+            System.out.println(OUTPUT_HEADER + "success");
         }
     }
 }
