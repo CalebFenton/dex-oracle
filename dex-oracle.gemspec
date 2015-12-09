@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.homepage = 'https://github.com/CalebFenton/dex-oracle'
   s.authors  = ['Caleb Fenton']
   s.description = <<-EOF
-DexOracle is a pattern based Dalvik deobfuscator which uses limited execution to improve semantic analysis.
+A pattern based Dalvik deobfuscator which uses limited execution to improve semantic analysis.
 EOF
 
   dependencies = [

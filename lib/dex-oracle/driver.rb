@@ -1,6 +1,7 @@
 require 'json'
 require 'digest'
 require 'Open3'
+require 'timeout'
 require_relative 'logging'
 require_relative 'utility'
 
@@ -14,16 +15,19 @@ class Driver
       "\"" => "\x22", "'" => "\x27"
   }
   UNESCAPE_REGEX = /\\(?:([#{UNESCAPES.keys.join}])|u([\da-fA-F]{4}))|\\0?x([\da-fA-F]{2})/
+
+  OUTPUT_HEADER = '===ORACLE DRIVER OUTPUT==='
   DRIVER_DIR = '/data/local'
   DRIVER_CLASS = 'org.cf.oracle.Driver'
   DX_PATH = 'res/dx.jar'
   DRIVER_DEX_PATH = 'res/driver.dex'
 
-  def initialize(device_id)
+  def initialize(device_id, timeout)
     @device_id = device_id
+    @timeout = timeout
 
     device_str = device_id.empty? ? '' : "-s #{@device_id} "
-    @adb_base = "adb shell #{device_str}\"%s\"; echo $?"
+    @adb_base = "adb #{device_str} %s"
     @cmd_stub = "export CLASSPATH=#{DRIVER_DIR}/od.zip; app_process /system/bin #{DRIVER_CLASS}"
 
     @cache = {}
@@ -40,13 +44,13 @@ class Driver
       raise "#{DRIVER_DEX_PATH} does not exist" unless File.exist?(DRIVER_DEX_PATH)
       tf = Tempfile.new(['oracle-driver', '.dex'])
       cmd = "java -cp #{DX_PATH} com.android.dx.merge.DexMerger #{tf.path} #{dex.path} #{DRIVER_DEX_PATH}"
-      Driver.exec("#{cmd}")
+      exec("#{cmd}")
 
       # Zip merged dex and push to device
       logger.debug("Pushing merged driver to device ...")
       tz = Tempfile.new(['oracle-driver', '.zip'])
       Utility.create_zip(tz.path, { 'classes.dex' => tf })
-      Driver.exec("adb push #{tz.path} #{DRIVER_DIR}/od.zip")
+      adb("push #{tz.path} #{DRIVER_DIR}/od.zip")
     ensure
       tf.close
       tf.unlink
@@ -59,12 +63,28 @@ class Driver
     method = SmaliMethod.new(class_name, signature)
     cmd = build_command(method.class, method.name, method.parameters, args)
     output = nil
-    output = adb(cmd)
+
+    retries = 1
+    begin
+      output = drive(cmd)
+    rescue => e
+      # If you slam an emulator or device with too many app_process commands,
+      # it eventually gets angry and segmentation faults. No idea why.
+      # This took many frustrating hours to figure out.
+      if retries <= 3
+        logger.debug("Driver execution failed. Taking a quick nap then retrying, Zzzzz ##{retries} / 3 ...")
+        sleep 5
+        retries += 1
+        retry
+      else
+        raise e
+      end
+    end
   end
 
   def run_batch(batch)
     push_batch_targets(batch)
-    adb("#{@cmd_stub} @#{DRIVER_DIR}/od-targets.json", false)
+    drive("#{@cmd_stub} @#{DRIVER_DIR}/od-targets.json", true)
     pull_batch_outputs
   end
 
@@ -88,7 +108,7 @@ class Driver
     target_file << batch.to_json
     target_file.flush
     logger.info("Pushing #{batch.size} method targets to device ...")
-    Driver.exec("adb push #{target_file.path} #{DRIVER_DIR}/od-targets.json")
+    adb("push #{target_file.path} #{DRIVER_DIR}/od-targets.json")
     target_file.close
     target_file.unlink
   end
@@ -96,38 +116,46 @@ class Driver
   def pull_batch_outputs
     output_file = Tempfile.new(['oracle-output', '.json'])
     logger.debug("Pulling batch results from device ...")
-    Driver.exec("adb pull #{DRIVER_DIR}/od-output.json #{output_file.path}")
-    Driver.exec("adb shell rm #{DRIVER_DIR}/od-output.json")
+    adb("pull #{DRIVER_DIR}/od-output.json #{output_file.path}")
+    #adb("shell rm #{DRIVER_DIR}/od-output.json")
     outputs = JSON.parse(File.read(output_file.path))
+    outputs.each { |_, (_, v2)| v2.gsub!(/(?:^"|"$)/, '') if v2.start_with?('"') }
     logger.debug("Pulled #{outputs.size} outputs.")
     output_file.close
     output_file.unlink
     outputs
   end
 
-  def self.exec(cmd, silent = true)
-    logger.debug(cmd)
-    unless silent
-      `#{cmd}`
-    else
-      Open3.popen3(cmd) do |stdin, stdout, stderr, thread|
-        stdout.read
+  def exec(cmd, silent = true)
+    logger.debug("exec: #{cmd}")
+
+    retries = 1
+    begin
+      status = Timeout::timeout(@timeout) do
+        if !silent
+          `#{cmd}`
+        else
+          Open3.popen3(cmd) { |_, stdout, _, _| stdout.read }
+        end
+      end
+    rescue => e
+      if retries <= 3
+        logger.debug("ADB command execution timed out, retrying #{retries} ...")
+        sleep 5
+        retries += 1
+        retry
+      else
+        raise
       end
     end
   end
 
-  def adb(cmd, batch = true)
-    logger.debug("cmd = #{cmd}")
+  def drive(cmd, batch = false)
+    return @cache[cmd] if @cache.has_key?(cmd)
 
     output = nil
-    full_cmd = @adb_base % cmd
-    if batch
-      @cache[cmd] = Driver.exec(full_cmd).rstrip unless @cache.has_key?(cmd)
-      output = @cache[cmd]
-    else
-      output = Driver.exec(full_cmd).rstrip
-    end
-
+    full_cmd = "shell \"#{cmd}\"; echo $?"
+    output = adb(full_cmd)
     output_lines = output.split(/\r?\n/)
     exit_code = output_lines.last.to_i
     if exit_code != 0
@@ -139,26 +167,31 @@ class Driver
     # The driver writes any actual exceptions to the filesystem
     # Need to check to make sure the output value is legitimate
     logger.debug("Checking if execution had any exceptions ...")
-    exception = Driver.exec("adb shell cat #{DRIVER_DIR}/od-exception.txt").strip
+    exception = adb("shell cat #{DRIVER_DIR}/od-exception.txt").strip
     unless exception.end_with?('No such file or directory')
-      logger.debug("No exceptions!")
-      Driver.exec("adb shell rm #{DRIVER_DIR}/od-exception.txt")
+      adb("shell rm #{DRIVER_DIR}/od-exception.txt")
       raise exception
     end
+    logger.debug("No exceptions found :)")
 
     # Successful driver run should include driver header
+    # Otherwise it may be a Segmentation fault or Killed
     header = output_lines[0]
-    if header != '===ORACLE DRIVER OUTPUT==='
-      p header
-      p cmd
-    end
-    raise "Unexpected driver output: '#{output}'" if header != '===ORACLE DRIVER OUTPUT==='
-    output = output_lines[1..-2].join("\n")
+    logger.debug("Full output: #{output.inspect}")
+    raise "app_process execution failure, output: '#{output}'" if header != OUTPUT_HEADER
 
+    output = output_lines[1..-2].join("\n").rstrip
+    # Cache successful results for single method invocations for speed!
+    # Need to cache the original output
+    @cache[cmd] = output unless batch
     logger.debug("output = #{output}")
 
-    sleep 0.5
-    output.rstrip
+    output
+  end
+
+  def adb(cmd)
+    full_cmd = @adb_base % cmd
+    exec(full_cmd).rstrip
   end
 
   def self.unescape(str)

@@ -28,7 +28,7 @@ class SmaliFile
       update_method(m)
       m.modified = false
     end
-    File.open(@file_path, 'w') { |f| f.write(@content.gsub('\\', '\\\\\\\\')) }
+    File.open(@file_path, 'w') { |f| f.write(@content) }
   end
 
   def to_s
@@ -59,8 +59,7 @@ class SmaliFile
 
   def update_method(method)
     body_regex = build_method_regex(method.signature)
-    body = @content[body_regex, 1]
-    @content.sub!(body, method.body)
+    @content[body_regex, 1] = method.body
   end
 end
 

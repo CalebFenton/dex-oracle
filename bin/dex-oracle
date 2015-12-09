@@ -11,6 +11,7 @@ include Logging
 
 options = {
     device_id: ENV['ANDROID_SERIAL'] || '',
+    timeout: 60 * 2,
     include_types: nil,
     exclude_types: nil,
 }
@@ -25,6 +26,11 @@ optparse = OptionParser.new do |opts|
   opts.on('-s', '--specific-device ANDROID_SERIAL',
     "Device ID for driver execution, default=\"#{options[:device_id]}\"") do |id|
     options[:device_id] = id
+  end
+
+  opts.on('-t', '--timeout N',
+    "ADB command execution timeout in seconds, default=\"#{options[:timeout]}\"") do |id|
+    options[:timeout] = id
   end
 
   opts.on('-i', '--include PATTERN', Regexp,
@@ -66,7 +72,7 @@ start = Time.now
 input = ARGV[0]
 smali_input = SmaliInput.new(input)
 
-driver = Driver.new(options[:device_id])
+driver = Driver.new(options[:device_id], options[:timeout])
 driver.install(smali_input.out_dex)
 
 oracle = Oracle.new(smali_input.dir, driver, options[:include_types], options[:exclude_types])

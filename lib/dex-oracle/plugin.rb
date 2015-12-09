@@ -41,7 +41,7 @@ class Plugin
       target_to_contexts.each do |target, contexts|
         status, output = target_id_to_output[target[:id]]
         unless status == 'success'
-          logger.warn(output)
+          logger.warn("Unsuccessful status: #{status} for #{output}")
           next
         end
 
@@ -49,9 +49,11 @@ class Plugin
           modification = modifier.call(original, output, out_reg)
           #puts "modification #{original.inspect} = #{modification.inspect}"
 
-          # Go home Ruby, you're drunk.
-          modification.gsub!('\\') { '\\\\' }
-          method.body.gsub!(original) { modification }
+          # Go home Ruby. You're drunk.
+          #modification.gsub!('\\') { '\\\\' }
+          #method.body.gsub!(original) { modification }
+
+          dumb_replace(method.body, original, modification)
         end
 
         made_changes = true
@@ -60,5 +62,12 @@ class Plugin
     end
 
     made_changes
+  end
+
+  def self.dumb_replace(string, find, replace)
+    while string.include?(find)
+      string[find] = replace
+    end
+    string
   end
 end

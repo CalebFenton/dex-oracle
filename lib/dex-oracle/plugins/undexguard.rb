@@ -1,4 +1,5 @@
 require_relative '../logging'
+require_relative '../utility'
 
 class Undexguard < Plugin
   include Logging
@@ -51,12 +52,12 @@ class Undexguard < Plugin
           'invoke-direct \{[vp]\d+, [vp]\d+\}, Ljava\/lang\/String;-><init>\(\[B\)V' <<
           ')')
 
-  MODIFIER = lambda { |original, output, out_reg| "const-string #{out_reg}, #{output}" }
+  MODIFIER = lambda { |original, output, out_reg| "const-string #{out_reg}, \"#{output.split('').collect { |e| e.inspect[1..-2] }.join}\"" }
 
   def self.process(driver, smali_files, methods)
     method_to_target_to_contexts = {}
     methods.each do |method|
-      logger.info("Undexguarding #{method.descriptor}")
+      logger.info("Undexguarding #{method.descriptor}, stage 1/2")
       target_to_contexts = {}
       target_to_contexts.merge!(Undexguard.lookup_strings_3int(driver, method))
       target_to_contexts.merge!(Undexguard.lookup_strings_1int(driver, method))
@@ -70,7 +71,7 @@ class Undexguard < Plugin
     made_changes |= Plugin.apply_batch(driver, method_to_target_to_contexts, MODIFIER)
 
     methods.each do |method|
-      logger.info("Undexguarding #{method.descriptor}, 2nd stage")
+      logger.info("Undexguarding #{method.descriptor}, stage 2/2")
       made_changes |= Undexguard.decrypt_multi_bytes(driver, method)
     end
 
@@ -159,13 +160,12 @@ class Undexguard < Plugin
       dec_string = dec_array.pack('U*')
 
       target = { id: Digest::SHA256.hexdigest(original) }
-      target_id_to_output[target[:id]] = ['success', "\"#{dec_string}\""]
+      target_id_to_output[target[:id]] = ['success', dec_string]
       target_to_contexts[target] = [] unless target_to_contexts.has_key?(target)
       target_to_contexts[target] << [original, out_reg]
     end
 
     method_to_target_to_contexts = { method => target_to_contexts }
-    modifier = lambda { |original, output, out_reg| "const-string #{out_reg}, #{output}" }
-    Plugin.apply_outputs(target_id_to_output, method_to_target_to_contexts, modifier)
+    Plugin.apply_outputs(target_id_to_output, method_to_target_to_contexts, MODIFIER)
   end
 end
