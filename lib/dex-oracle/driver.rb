@@ -22,7 +22,7 @@ class Driver
   DX_PATH = 'res/dx.jar'
   DRIVER_DEX_PATH = 'res/driver.dex'
 
-  def initialize(device_id, timeout)
+  def initialize(device_id, timeout = 60)
     @device_id = device_id
     @timeout = timeout
 
@@ -117,7 +117,7 @@ class Driver
     output_file = Tempfile.new(['oracle-output', '.json'])
     logger.debug("Pulling batch results from device ...")
     adb("pull #{DRIVER_DIR}/od-output.json #{output_file.path}")
-    #adb("shell rm #{DRIVER_DIR}/od-output.json")
+    adb("shell rm #{DRIVER_DIR}/od-output.json")
     outputs = JSON.parse(File.read(output_file.path))
     outputs.each { |_, (_, v2)| v2.gsub!(/(?:^"|"$)/, '') if v2.start_with?('"') }
     logger.debug("Pulled #{outputs.size} outputs.")
@@ -150,19 +150,30 @@ class Driver
     end
   end
 
-  def drive(cmd, batch = false)
-    return @cache[cmd] if @cache.has_key?(cmd)
-
-    output = nil
-    full_cmd = "shell \"#{cmd}\"; echo $?"
-    output = adb(full_cmd)
-    output_lines = output.split(/\r?\n/)
+  def validate_output(full_cmd, full_output)
+    output_lines = full_output.split(/\r?\n/)
     exit_code = output_lines.last.to_i
     if exit_code != 0
       # Non zero exit code would only imply adb command itself was flawed
       # app_process, dalvikvm, etc. don't propigate exit codes back
-      raise "Command failed with #{exit_code}: #{full_cmd}\nOutput: #{output}"
+      raise "Command failed with #{exit_code}: #{full_cmd}\nOutput: #{full_output}"
     end
+
+    # Successful driver run should include driver header
+    # Otherwise it may be a Segmentation fault or Killed
+    header = output_lines[0]
+    logger.debug("Full output: #{full_output.inspect}")
+    raise "app_process execution failure, output: '#{full_output}'" if header != OUTPUT_HEADER
+
+    output_lines[1..-2].join("\n").rstrip
+  end
+
+  def drive(cmd, batch = false)
+    return @cache[cmd] if @cache.has_key?(cmd)
+
+    full_cmd = "shell \"#{cmd}\"; echo $?"
+    full_output = adb(full_cmd)
+    output = validate_output(full_cmd, full_output)
 
     # The driver writes any actual exceptions to the filesystem
     # Need to check to make sure the output value is legitimate
@@ -174,16 +185,10 @@ class Driver
     end
     logger.debug("No exceptions found :)")
 
-    # Successful driver run should include driver header
-    # Otherwise it may be a Segmentation fault or Killed
-    header = output_lines[0]
-    logger.debug("Full output: #{output.inspect}")
-    raise "app_process execution failure, output: '#{output}'" if header != OUTPUT_HEADER
-
     output = output_lines[1..-2].join("\n").rstrip
     # Cache successful results for single method invocations for speed!
     # Need to cache the original output
-    @cache[cmd] = output unless batch
+    @cache[cmd] = full_output unless batch
     logger.debug("output = #{output}")
 
     output

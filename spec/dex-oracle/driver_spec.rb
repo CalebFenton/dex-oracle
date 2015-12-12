@@ -18,15 +18,14 @@ describe Driver do
         allow(File).to receive(:open).and_yield(temp_file)
         allow(File).to receive(:read)
         allow(JSON).to receive(:parse)
-        allow(Driver).to receive(:exec)
         Driver.new(device_id)
     }
 
-    describe '#make_batch_item' do
+    describe '#make_target' do
         let(:device_id) { '' }
-        let(:make_batch_item) { driver.make_batch_item(class_name, method_signature, *args) }
+        let(:make_target) { driver.make_target(class_name, method_signature, *args) }
 
-        subject { make_batch_item }
+        subject { make_target }
         it {
             should eq batch_item
         }
@@ -39,28 +38,27 @@ describe Driver do
 
         subject { run_batch }
         it {
-            allow(driver).to receive(:adb)
             expect(temp_file).to receive(:<<).with(batch.to_json).ordered
-            #expect(Driver).to receive(:exec).with('adb shell rm /data/local/od-targets.json')
-            expect(Driver).to receive(:exec).with("adb push #{temp_file.path} /data/local/od-targets.json")
-            expect(Driver).to receive(:exec).with("adb pull /data/local/od-output.json #{temp_file.path}")
-            expect(Driver).to receive(:exec).with("adb shell rm /data/local/od-output.json")
-            expect(driver).to receive(:adb).with(
-                'export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.oracle.Driver @/data/local/od-targets.json', false
+            expect(driver).to receive(:adb).with("push #{temp_file.path} /data/local/od-targets.json")
+            expect(driver).to receive(:drive).with(
+                'export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.oracle.Driver @/data/local/od-targets.json', true
             )
+            allow(JSON).to receive(:parse) { {} }
+            expect(driver).to receive(:adb).with("pull /data/local/od-output.json #{temp_file.path}")
+            expect(driver).to receive(:adb).with("shell rm /data/local/od-output.json")
             subject
         }
     end
 
-    describe '#run_single' do
+    describe '#run' do
         context 'with a device id' do
             let(:device_id) { '1234abcd' }
 
             context 'with integer arguments' do
-                subject { driver.run_single(class_name, method_signature, *args) }
+                subject { driver.run(class_name, method_signature, *args) }
                 it {
-                    allow(driver).to receive(:adb)
-                    expect(driver).to receive(:adb).with(
+                    allow(driver).to receive(:drive)
+                    expect(driver).to receive(:drive).with(
                         "export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.oracle.Driver 'some.Klazz' 'run' I:1 I:2 I:3"
                     )
                     subject
@@ -76,10 +74,10 @@ describe Driver do
                 let(:method_signature) { 'run(Ljava/lang/String;)V' }
                 let(:args) { 'hello string' }
 
-                subject { driver.run_single(class_name, method_signature, args) }
+                subject { driver.run(class_name, method_signature, args) }
                 it {
-                    allow(driver).to receive(:adb)
-                    expect(driver).to receive(:adb).with(
+                    allow(driver).to receive(:drive)
+                    expect(driver).to receive(:drive).with(
                         "export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.oracle.Driver 'string.Klazz' 'run' java.lang.String:[104,101,108,108,111,32,115,116,114,105,110,103]"
                     )
                     subject
