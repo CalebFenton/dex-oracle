@@ -72,7 +72,7 @@ class Driver
       # it eventually gets angry and segmentation faults. No idea why.
       # This took many frustrating hours to figure out.
       if retries <= 3
-        logger.debug("Driver execution failed. Taking a quick nap then retrying, Zzzzz ##{retries} / 3 ...")
+        logger.debug("Driver execution failed. Taking a quick nap and retrying, Zzzzz ##{retries} / 3 ...")
         sleep 5
         retries += 1
         retry
@@ -84,7 +84,20 @@ class Driver
 
   def run_batch(batch)
     push_batch_targets(batch)
-    drive("#{@cmd_stub} @#{DRIVER_DIR}/od-targets.json", true)
+    retries = 1
+    begin
+      drive("#{@cmd_stub} @#{DRIVER_DIR}/od-targets.json", true)
+    rescue => e
+      if retries <= 3 && e.message.include?('Segmentation fault')
+        # Maybe we just need to retry
+        logger.debug("Driver execution segfaulted. Taking a quick nap and retrying, Zzzzz ##{retries} / 3 ...")
+        sleep 5
+        retries += 1
+        retry
+      else
+        raise e
+      end
+    end
     pull_batch_outputs
   end
 
@@ -145,7 +158,7 @@ class Driver
         retries += 1
         retry
       else
-        raise
+        raise e
       end
     end
   end
@@ -161,8 +174,8 @@ class Driver
 
     # Successful driver run should include driver header
     # Otherwise it may be a Segmentation fault or Killed
-    header = output_lines[0]
     logger.debug("Full output: #{full_output.inspect}")
+    header = output_lines[0]
     raise "app_process execution failure, output: '#{full_output}'" if header != OUTPUT_HEADER
 
     output_lines[1..-2].join("\n").rstrip
@@ -185,10 +198,8 @@ class Driver
     end
     logger.debug("No exceptions found :)")
 
-    output = output_lines[1..-2].join("\n").rstrip
     # Cache successful results for single method invocations for speed!
-    # Need to cache the original output
-    @cache[cmd] = full_output unless batch
+    @cache[cmd] = output unless batch
     logger.debug("output = #{output}")
 
     output

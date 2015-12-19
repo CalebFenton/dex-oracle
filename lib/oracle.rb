@@ -7,21 +7,18 @@ class Oracle
 
   def initialize(smali_dir, driver, include_types, exclude_types)
     Dir["#{File.dirname(__FILE__)}/dex-oracle/plugins/*.rb"].each { |f| require f }
-    Plugin.init_plugins(include_types, exclude_types)
     @smali_files = Oracle.parse_smali(smali_dir)
-    @driver = driver
     @methods = Oracle.filter_methods(@smali_files, include_types, exclude_types)
+    Plugin.init_plugins(driver, @smali_files, @methods)
   end
 
   def divine
-    puts "Optimizing #{@methods.size} methods over #{@smali_files.size} smali files."
+    puts "Optimizing #{@methods.size} methods over #{@smali_files.size} Smali files."
 
     made_changes = false
     loop do
       sweep_changes = false
-      Plugin.plugins.each do |p|
-        sweep_changes |= p.process(@driver, @smali_files, @methods)
-      end
+      Plugin.plugins.each { |p| sweep_changes |= p.process }
       made_changes |= sweep_changes
       break unless sweep_changes
     end

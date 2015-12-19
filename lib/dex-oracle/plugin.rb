@@ -1,4 +1,3 @@
-
 class Plugin
   module CommonRegex
     CONST_NUMBER = 'const(?:\/\d+) [vp]\d+, (-?0x[a-f\d]+)'
@@ -13,12 +12,20 @@ class Plugin
     @plugins
   end
 
-  def self.init_plugins(include_types, exclude_types)
+  def self.init_plugins(driver, smali_files, methods)
     Object.constants.each do |klass|
       const = Kernel.const_get(klass)
       next unless const.respond_to?(:superclass) && const.superclass == Plugin
-      @plugins << const
+      @plugins << const.new(driver, smali_files, methods)
     end
+  end
+
+  def process
+    raise "process not implemented"
+  end
+
+  def optimizations
+    raise "optimizations not implemented"
   end
 
   # method_to_target_to_context -> { method: [target_to_context] }

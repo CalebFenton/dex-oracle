@@ -54,87 +54,42 @@ class Undexguard < Plugin
 
   MODIFIER = lambda { |original, output, out_reg| "const-string #{out_reg}, \"#{output.split('').collect { |e| e.inspect[1..-2] }.join}\"" }
 
-  def self.process(driver, smali_files, methods)
+  def initialize(driver, smali_files, methods)
+    @driver = driver
+    @smali_files = smali_files
+    @methods = methods
+    @optimizations = Hash.new(0)
+  end
+
+  def process
     method_to_target_to_contexts = {}
-    methods.each do |method|
-      logger.info("Undexguarding #{method.descriptor}, stage 1/2")
+    @methods.each do |method|
+      logger.info("Undexguarding #{method.descriptor} - stage 1/2")
       target_to_contexts = {}
-      target_to_contexts.merge!(Undexguard.lookup_strings_3int(driver, method))
-      target_to_contexts.merge!(Undexguard.lookup_strings_1int(driver, method))
-      target_to_contexts.merge!(Undexguard.decrypt_strings(driver, method))
-      target_to_contexts.merge!(Undexguard.decrypt_bytes(driver, method))
+      target_to_contexts.merge!(lookup_strings_3int(method))
+      target_to_contexts.merge!(lookup_strings_1int(method))
+      target_to_contexts.merge!(decrypt_strings(method))
+      target_to_contexts.merge!(decrypt_bytes(method))
       target_to_contexts.map { |k, v| v.uniq! }
       method_to_target_to_contexts[method] = target_to_contexts unless target_to_contexts.empty?
     end
 
     made_changes = false
-    made_changes |= Plugin.apply_batch(driver, method_to_target_to_contexts, MODIFIER)
+    made_changes |= Plugin.apply_batch(@driver, method_to_target_to_contexts, MODIFIER)
 
-    methods.each do |method|
-      logger.info("Undexguarding #{method.descriptor}, stage 2/2")
-      made_changes |= Undexguard.decrypt_multi_bytes(driver, method)
+    @methods.each do |method|
+      logger.info("Undexguarding #{method.descriptor} - stage 2/2")
+      made_changes |= decrypt_multi_bytes(method)
     end
 
     made_changes
   end
 
+  def optimizations
+    @optimizations
+  end
+
   private
-
-  def self.lookup_strings_3int(driver, method)
-    target_to_contexts = {}
-    matches = method.body.scan(STRING_LOOKUP_3INT)
-    matches.each do |original, arg1, arg2, arg3, class_name, method_signature, out_reg|
-      target = driver.make_target(
-        class_name, method_signature, arg1.to_i(16), arg2.to_i(16), arg3.to_i(16)
-      )
-      target_to_contexts[target] = [] unless target_to_contexts.has_key?(target)
-      target_to_contexts[target] << [original, out_reg]
-    end
-
-    target_to_contexts
-  end
-
-  def self.lookup_strings_1int(driver, method)
-    target_to_contexts = {}
-    matches = method.body.scan(STRING_LOOKUP_1INT)
-    matches.each do |original, arg1, class_name, method_signature, out_reg|
-      target = driver.make_target(
-        class_name, method_signature, arg1.to_i(16)
-      )
-      target_to_contexts[target] = [] unless target_to_contexts.has_key?(target)
-      target_to_contexts[target] << [original, out_reg]
-    end
-
-    target_to_contexts
-  end
-
-  def self.decrypt_strings(driver, method)
-    target_to_contexts = {}
-    matches = method.body.scan(STRING_DECRYPT)
-    matches.each do |original, encrypted, class_name, method_signature, out_reg|
-      target = driver.make_target(
-        class_name, method_signature, encrypted
-      )
-      target_to_contexts[target] = [] unless target_to_contexts.has_key?(target)
-      target_to_contexts[target] << [original, out_reg]
-    end
-
-    target_to_contexts
-  end
-
-  def self.decrypt_bytes(driver, method)
-    target_to_contexts = {}
-    matches = method.body.scan(BYTES_DECRYPT)
-    matches.each do |original, encrypted, class_name, method_signature, out_reg|
-      target = driver.make_target(
-        class_name, method_signature, encrypted.bytes.to_a
-      )
-      target_to_contexts[target] = [] unless target_to_contexts.has_key?(target)
-      target_to_contexts[target] << [original, out_reg]
-    end
-
-    target_to_contexts
-  end
 
   def self.array_string_to_array(str)
       if str =~ /^\[(\d+(,|\]$))+/
@@ -145,18 +100,79 @@ class Undexguard < Plugin
       str
   end
 
-  def self.decrypt_multi_bytes(driver, method)
+  def lookup_strings_3int(method)
+    target_to_contexts = {}
+    matches = method.body.scan(STRING_LOOKUP_3INT)
+    @optimizations[:string_lookups] += matches.size if matches
+    matches.each do |original, arg1, arg2, arg3, class_name, method_signature, out_reg|
+      target = @driver.make_target(
+        class_name, method_signature, arg1.to_i(16), arg2.to_i(16), arg3.to_i(16)
+      )
+      target_to_contexts[target] = [] unless target_to_contexts.has_key?(target)
+      target_to_contexts[target] << [original, out_reg]
+    end
+
+    target_to_contexts
+  end
+
+  def lookup_strings_1int(method)
+    target_to_contexts = {}
+    matches = method.body.scan(STRING_LOOKUP_1INT)
+    @optimizations[:string_lookups] += matches.size if matches
+    matches.each do |original, arg1, class_name, method_signature, out_reg|
+      target = @driver.make_target(
+        class_name, method_signature, arg1.to_i(16)
+      )
+      target_to_contexts[target] = [] unless target_to_contexts.has_key?(target)
+      target_to_contexts[target] << [original, out_reg]
+    end
+
+    target_to_contexts
+  end
+
+  def decrypt_strings(method)
+    target_to_contexts = {}
+    matches = method.body.scan(STRING_DECRYPT)
+    @optimizations[:string_decrypts] += matches.size if matches
+    matches.each do |original, encrypted, class_name, method_signature, out_reg|
+      target = @driver.make_target(
+        class_name, method_signature, encrypted
+      )
+      target_to_contexts[target] = [] unless target_to_contexts.has_key?(target)
+      target_to_contexts[target] << [original, out_reg]
+    end
+
+    target_to_contexts
+  end
+
+  def decrypt_bytes(method)
+    target_to_contexts = {}
+    matches = method.body.scan(BYTES_DECRYPT)
+    @optimizations[:string_decrypts] += matches.size if matches
+    matches.each do |original, encrypted, class_name, method_signature, out_reg|
+      target = @driver.make_target(
+        class_name, method_signature, encrypted.bytes.to_a
+      )
+      target_to_contexts[target] = [] unless target_to_contexts.has_key?(target)
+      target_to_contexts[target] << [original, out_reg]
+    end
+
+    target_to_contexts
+  end
+
+  def decrypt_multi_bytes(method)
     target_to_contexts = {}
     target_id_to_output = {}
     matches = method.body.scan(MULTI_BYTES_DECRYPT)
+    @optimizations[:string_decrypts] += matches.size if matches
     matches.each do |original, iv_str, out_reg, iv_class_name, iv_method_signature,
         iv2_str, iv2_class_name, iv2_method_signature,
         dec_class_name, dec_method_signature|
 
-      iv_bytes = driver.run(iv_class_name, iv_method_signature, iv_str)
-      enc_bytes = driver.run(iv2_class_name, iv2_method_signature, iv_bytes, iv2_str)
-      dec_bytes = driver.run(dec_class_name, dec_method_signature, enc_bytes)
-      dec_array = array_string_to_array(dec_bytes)
+      iv_bytes = @driver.run(iv_class_name, iv_method_signature, iv_str)
+      enc_bytes = @driver.run(iv2_class_name, iv2_method_signature, iv_bytes, iv2_str)
+      dec_bytes = @driver.run(dec_class_name, dec_method_signature, enc_bytes)
+      dec_array = Undexguard.array_string_to_array(dec_bytes)
       dec_string = dec_array.pack('U*')
 
       target = { id: Digest::SHA256.hexdigest(original) }

@@ -5,6 +5,8 @@ class Unreflector < Plugin
   include Logging
   include CommonRegex
 
+  attr_reader :optimizations
+
   CLASS_FOR_NAME = 'invoke-static \{[vp]\d+\}, Ljava\/lang\/Class;->forName\(Ljava\/lang\/String;\)Ljava\/lang\/Class;'
 
   CONST_CLASS_REGEX = Regexp.new(
@@ -39,22 +41,34 @@ class Unreflector < Plugin
           MOVE_RESULT_OBJECT <<
           ')')
 
-  def self.process(driver, smali_files, methods)
+  def initialize(driver, smali_files, methods)
+    @driver = driver
+    @smali_files = smali_files
+    @methods = methods
+    @optimizations = Hash.new(0)
+  end
+
+  def process
     made_changes = false
-    methods.each do |method|
+    @methods.each do |method|
       logger.info("Unreflecting #{method.descriptor}")
-      made_changes |= Unreflector.lookup_classes(driver, method)
+      made_changes |= lookup_classes(method)
     end
 
     made_changes
   end
 
+  def optimizations
+    @optimizations
+  end
+
   private
 
-  def self.lookup_classes(driver, method)
+  def lookup_classes(method)
     target_to_contexts = {}
     target_id_to_output = {}
     matches = method.body.scan(CONST_CLASS_REGEX)
+    @optimizations[:class_lookups] += matches.size
     matches.each do |original, class_name, out_reg|
       target = { id: Digest::SHA256.hexdigest(original) }
       smali_class = "L#{class_name.gsub('.', '/')};"
