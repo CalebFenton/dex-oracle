@@ -23,6 +23,11 @@ class Oracle
       break unless sweep_changes
     end
 
+    optimizations = {}
+    Plugin.plugins.each { |p| optimizations.merge!(p.optimizations) }
+    opt_str = optimizations.collect {|k,v| "#{k}=#{v}" } * ', '
+    puts "Optimizations: #{opt_str}"
+
     @smali_files.each { |sf| sf.update } if made_changes
   end
 
