@@ -5,11 +5,12 @@ require_relative 'dex-oracle/smali_file'
 class Oracle
   include Logging
 
-  def initialize(smali_dir, driver, include_types, exclude_types)
-    Dir["#{File.dirname(__FILE__)}/dex-oracle/plugins/*.rb"].each { |f| require f }
+  def initialize(smali_dir, driver, include_types, exclude_types, disable_plugins)
     @smali_files = Oracle.parse_smali(smali_dir)
     @methods = Oracle.filter_methods(@smali_files, include_types, exclude_types)
     Plugin.init_plugins(driver, @smali_files, @methods)
+    @disable_plugins = disable_plugins
+    logger.info("Disabled plugins: #{@disable_plugins * ','}") unless @disable_plugins.empty?
   end
 
   def divine
@@ -18,7 +19,10 @@ class Oracle
     made_changes = false
     loop do
       sweep_changes = false
-      Plugin.plugins.each { |p| sweep_changes |= p.process }
+      Plugin.plugins.each do |p|
+        next if @disable_plugins.include?(p.class.name.downcase)
+        sweep_changes |= p.process
+      end
       made_changes |= sweep_changes
       break unless sweep_changes
     end

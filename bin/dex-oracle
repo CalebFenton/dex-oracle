@@ -14,6 +14,7 @@ options = {
     timeout: 60 * 2,
     include_types: nil,
     exclude_types: nil,
+    disable_plugins: [],
 }
 
 optparse = OptionParser.new do |opts|
@@ -41,6 +42,18 @@ optparse = OptionParser.new do |opts|
   opts.on('-e', '--exclude PATTERN', Regexp,
     "Exclude these types from optimization; including overrides") do |regex|
     options[:exclude_types] = regex
+  end
+
+  opts.on('--disable-plugins PLUGIN[,PLUGIN]*', String,
+    'Disable plugins, e.g. StringDecryptor,ArithmeticSilencer') do |str|
+    options[:disable_plugins] = str.downcase.gsub(' ', '').split(',')
+  end
+
+  opts.on('--list-plugins', 'List available plugins') do
+    require_relative '../lib/dex-oracle/plugin'
+    puts "Available plugins:"
+    Plugin.plugin_classes.each { |c| puts "  #{c}"}
+    exit
   end
 
   opts.on('-v', '--verbose', "Be verbose") do
@@ -75,7 +88,9 @@ smali_input = SmaliInput.new(input)
 driver = Driver.new(options[:device_id], options[:timeout])
 driver.install(smali_input.out_dex)
 
-oracle = Oracle.new(smali_input.dir, driver, options[:include_types], options[:exclude_types])
+oracle = Oracle.new(
+  smali_input.dir, driver, options[:include_types], options[:exclude_types], options[:disable_plugins]
+)
 oracle.divine
 
 smali_input.finish

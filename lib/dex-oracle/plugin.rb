@@ -12,12 +12,20 @@ class Plugin
     @plugins
   end
 
-  def self.init_plugins(driver, smali_files, methods)
+  def self.plugin_classes
+    Dir["#{File.dirname(__FILE__)}/plugins/*.rb"].each { |f| require f }
+    classes = []
     Object.constants.each do |klass|
       const = Kernel.const_get(klass)
       next unless const.respond_to?(:superclass) && const.superclass == Plugin
-      @plugins << const.new(driver, smali_files, methods)
+      classes << const
     end
+
+    classes
+  end
+
+  def self.init_plugins(driver, smali_files, methods)
+    @plugins = plugin_classes.collect { |p| p.new(driver, smali_files, methods) }
   end
 
   def process
