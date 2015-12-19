@@ -21,14 +21,6 @@ class Undexguard < Plugin
           MOVE_RESULT_OBJECT <<
           ')')
 
-  STRING_DECRYPT = Regexp.new(
-      '^[ \t]*(' <<
-          CONST_STRING << '\s+' <<
-          'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(Ljava/lang/String;\))Ljava/lang/String;' <<
-          '\s+' <<
-          MOVE_RESULT_OBJECT <<
-          ')')
-
   BYTES_DECRYPT = Regexp.new(
       '^[ \t]*(' <<
           CONST_STRING << '\s+' <<
@@ -68,7 +60,6 @@ class Undexguard < Plugin
       target_to_contexts = {}
       target_to_contexts.merge!(lookup_strings_3int(method))
       target_to_contexts.merge!(lookup_strings_1int(method))
-      target_to_contexts.merge!(decrypt_strings(method))
       target_to_contexts.merge!(decrypt_bytes(method))
       target_to_contexts.map { |k, v| v.uniq! }
       method_to_target_to_contexts[method] = target_to_contexts unless target_to_contexts.empty?
@@ -122,21 +113,6 @@ class Undexguard < Plugin
     matches.each do |original, arg1, class_name, method_signature, out_reg|
       target = @driver.make_target(
         class_name, method_signature, arg1.to_i(16)
-      )
-      target_to_contexts[target] = [] unless target_to_contexts.has_key?(target)
-      target_to_contexts[target] << [original, out_reg]
-    end
-
-    target_to_contexts
-  end
-
-  def decrypt_strings(method)
-    target_to_contexts = {}
-    matches = method.body.scan(STRING_DECRYPT)
-    @optimizations[:string_decrypts] += matches.size if matches
-    matches.each do |original, encrypted, class_name, method_signature, out_reg|
-      target = @driver.make_target(
-        class_name, method_signature, encrypted
       )
       target_to_contexts[target] = [] unless target_to_contexts.has_key?(target)
       target_to_contexts[target] << [original, out_reg]
