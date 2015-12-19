@@ -11,7 +11,13 @@ Bitcoin: 133bmAUshC5VxntCcusWJdT8Sq3BFsaGce
 
 ## Installation
 
-### Step 1. Install the Gem
+### Step 1. Install Smali / Baksmali
+I'm sure since you're an elite Android reverser you already have smali and baksmali on your path.
+
+### Step 2. Install Android SDK / ADB
+Make sure `adb` is on your path.
+
+### Step 3. Install the Gem
 ```
 gem install dex-oracle
 ```
@@ -24,7 +30,7 @@ gem install bundler
 bundle install
 ```
 
-### Step 2. Connect a Device or Emulator
+### Step 4. Connect a Device or Emulator
 _You must have either an emulator running or a device plugged in for Oracle to work._
 
 Oracle needs to execute  methods on an live Android system. This can either be on a device or an emulator (preferred). If it's a device, _make sure you don't mind running potentially hostile code on it_.

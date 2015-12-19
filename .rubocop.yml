@@ -1,8 +1,21 @@
-Style/IndentationWidth:
+Metrics/LineLength:
   Enabled: false
 
-Style/LineLength:
+Metrics/MethodLength:
+  CountComments: false
+  Max: 30
+
+Style/IndentationWidth:
   Enabled: false
 
 Style/LeadingCommentSpace:
   Enabled: false
+
+Style/DoubleNegation:
+  Enabled: false
+
+Style/TrailingComma:
+  Enabled: false
+
+Documentation:
+    Enabled: false

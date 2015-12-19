@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-$:.push('lib')
+$LOAD_PATH.push('lib')
 require 'dex-oracle/version'
 
 Gem::Specification.new do |s|

@@ -10,11 +10,11 @@ require_relative '../lib/dex-oracle/logging'
 include Logging
 
 options = {
-    device_id: ENV['ANDROID_SERIAL'] || '',
-    timeout: 60 * 2,
-    include_types: nil,
-    exclude_types: nil,
-    disable_plugins: [],
+  device_id: ENV['ANDROID_SERIAL'] || '',
+  timeout: 60 * 2,
+  include_types: nil,
+  exclude_types: nil,
+  disable_plugins: [],
 }
 
 optparse = OptionParser.new do |opts|
@@ -25,42 +25,42 @@ optparse = OptionParser.new do |opts|
   end
 
   opts.on('-s', '--specific-device ANDROID_SERIAL',
-    "Device ID for driver execution, default=\"#{options[:device_id]}\"") do |id|
+          "Device ID for driver execution, default=\"#{options[:device_id]}\"") do |id|
     options[:device_id] = id
   end
 
   opts.on('-t', '--timeout N',
-    "ADB command execution timeout in seconds, default=\"#{options[:timeout]}\"") do |id|
+          "ADB command execution timeout in seconds, default=\"#{options[:timeout]}\"") do |id|
     options[:timeout] = id
   end
 
   opts.on('-i', '--include PATTERN', Regexp,
-    'Only optimize methods and classes matching the pattern, e.g. Ldune;->melange\(\)V') do |regex|
+          'Only optimize methods and classes matching the pattern, e.g. Ldune;->melange\(\)V') do |regex|
     options[:include_types] = regex
   end
 
   opts.on('-e', '--exclude PATTERN', Regexp,
-    "Exclude these types from optimization; including overrides") do |regex|
+          'Exclude these types from optimization; including overrides') do |regex|
     options[:exclude_types] = regex
   end
 
   opts.on('--disable-plugins STRING[,STRING]*', String,
-    'Disable plugins, e.g. stringdecryptor,unreflector') do |str|
-    options[:disable_plugins] = str.downcase.gsub(' ', '').split(',')
+          'Disable plugins, e.g. stringdecryptor,unreflector') do |str|
+    options[:disable_plugins] = str.downcase.delete(' ').split(',')
   end
 
   opts.on('--list-plugins', 'List available plugins') do
     require_relative '../lib/dex-oracle/plugin'
-    puts "Available plugins:"
-    Plugin.plugin_classes.each { |c| puts "  #{c}"}
+    puts 'Available plugins:'
+    Plugin.plugin_classes.each { |c| puts "  #{c}" }
     exit
   end
 
-  opts.on('-v', '--verbose', "Be verbose") do
+  opts.on('-v', '--verbose', 'Be verbose') do
     logger.level = Logger::INFO
   end
 
-  opts.on('-V', '--vverbose', "Be very verbose") do
+  opts.on('-V', '--vverbose', 'Be very verbose') do
     logger.level = Logger::DEBUG
   end
 end

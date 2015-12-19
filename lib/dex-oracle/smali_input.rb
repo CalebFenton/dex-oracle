@@ -1,4 +1,5 @@
 require 'zip'
+require 'english'
 require_relative 'utility'
 
 class SmaliInput
@@ -21,11 +22,11 @@ class SmaliInput
   private
 
   def self.compile(dir, out_dex = nil)
-    raise 'Smali could not be found on the path.' if Utility.which('smali').nil?
+    fail 'Smali could not be found on the path.' if Utility.which('smali').nil?
     out_dex = Tempfile.new(['oracle', '.dex']) if out_dex.nil?
     exit_code = SmaliInput.exec("smali #{dir} -o #{out_dex.path}")
     # Remember kids, if you make a CLI, exit with non-zero status for failures
-    raise 'Crap, smali compilation failed.' if $?.exitstatus != 0
+    fail 'Crap, smali compilation failed.' if $CHILD_STATUS.exitstatus != 0
     out_dex
   end
 
@@ -63,12 +64,12 @@ class SmaliInput
       @out_dex = "#{File.basename(input, '.*')}_oracle#{File.extname(input)}"
       baksmali(input)
     else
-      raise "Unrecognized file type for: #{input}, magic=#{magic.inspect}"
+      fail "Unrecognized file type for: #{input}, magic=#{magic.inspect}"
     end
   end
 
   def baksmali(input)
-    raise 'Baksmali could not be found on the path.' if Utility.which('baksmali').nil?
+    fail 'Baksmali could not be found on the path.' if Utility.which('baksmali').nil?
     @dir = Dir.mktmpdir
     cmd = "baksmali #{input} -o #{@dir}"
     SmaliInput.exec(cmd)

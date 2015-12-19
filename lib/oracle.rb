@@ -15,7 +15,15 @@ class Oracle
 
   def divine
     puts "Optimizing #{@methods.size} methods over #{@smali_files.size} Smali files."
+    made_changes = process_plugins
+    @smali_files.each(&:update) if made_changes
+    optimizations = {}
+    Plugin.plugins.each { |p| optimizations.merge!(p.optimizations) }
+    opt_str = optimizations.collect { |k, v| "#{k}=#{v}" } * ', '
+    puts "Optimizations: #{opt_str}"
+  end
 
+  def process_plugins
     made_changes = false
     loop do
       sweep_changes = false
@@ -26,27 +34,18 @@ class Oracle
       made_changes |= sweep_changes
       break unless sweep_changes
     end
-
-    optimizations = {}
-    Plugin.plugins.each { |p| optimizations.merge!(p.optimizations) }
-    opt_str = optimizations.collect {|k,v| "#{k}=#{v}" } * ', '
-    puts "Optimizations: #{opt_str}"
-
-    @smali_files.each { |sf| sf.update } if made_changes
+    made_changes
   end
-
-  private
 
   def self.filter_methods(smali_files, include_types, exclude_types)
     methods = []
     smali_files.each do |smali_file|
       smali_file.methods.each do |method|
         if include_types
-          next if !!!(method.descriptor =~ include_types)
-        elsif exclude_types && !!(method.descriptor =~ exclude_types)
+          next if method.descriptor !~ include_types
+        elsif exclude_types && !(method.descriptor !~ exclude_types)
           next
         end
-
         methods << method
       end
     end

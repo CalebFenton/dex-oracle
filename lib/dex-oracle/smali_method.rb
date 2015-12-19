@@ -10,26 +10,21 @@ class SmaliMethod
     @class = class_name
     @name = signature[/[^\(]+/]
     @body = body
-
     @return_type = signature[/[^\)$]+$/]
     @descriptor = "#{class_name}->#{signature}"
     @signature = signature
-
     @parameters = []
     parameter_string = signature[PARAMETER_ISOLATOR]
-    unless parameter_string.nil?
-      parameter_string.scan(PARAMETER_INDIVIDUATOR).each do |m|
-        @parameters << m.first
-      end
-    end
+    return if parameter_string.nil?
+    parameter_string.scan(PARAMETER_INDIVIDUATOR).each { |m| @parameters << m.first }
   end
 
   def to_s
     @descriptor
   end
 
-  def ==(o)
-      o.class == self.class && o.state == state
+  def ==(other)
+      other.class == self.class && other.state == state
   end
 
   def state

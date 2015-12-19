@@ -29,11 +29,11 @@ class Plugin
   end
 
   def process
-    raise "process not implemented"
+    fail 'process not implemented'
   end
 
   def optimizations
-    raise "optimizations not implemented"
+    fail 'optimizations not implemented'
   end
 
   # method_to_target_to_context -> { method: [target_to_context] }
@@ -41,7 +41,7 @@ class Plugin
   # target = Driver.make_target, has :id key
   # context = [ [original, out_reg] ]
   def self.apply_batch(driver, method_to_target_to_contexts, modifier)
-    all_batches = method_to_target_to_contexts.values.collect { |e| e.keys }.flatten
+    all_batches = method_to_target_to_contexts.values.collect(&:keys).flatten
     return false if all_batches.empty?
 
     target_id_to_output = driver.run_batch(all_batches)
@@ -81,9 +81,7 @@ class Plugin
   end
 
   def self.dumb_replace(string, find, replace)
-    while string.include?(find)
-      string[find] = replace
-    end
+    string[find] = replace while string.include?(find)
     string
   end
 end

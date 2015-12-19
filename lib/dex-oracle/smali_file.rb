@@ -62,4 +62,3 @@ class SmaliFile
     @content[body_regex, 1] = method.body
   end
 end
-

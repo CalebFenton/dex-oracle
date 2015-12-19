@@ -6,45 +6,41 @@ class Undexguard < Plugin
   include CommonRegex
 
   STRING_LOOKUP_3INT = Regexp.new(
-      '^[ \t]*(' <<
-          ((CONST_NUMBER << '\s+') * 3) <<
-          'invoke-static \{[vp]\d+, [vp]\d+, [vp]\d+\}, L([^;]+);->([^\(]+\(III\))Ljava/lang/String;' <<
-          '\s+' <<
-          MOVE_RESULT_OBJECT <<
-          ')', Regexp::MULTILINE)
+    '^[ \t]*(' << ((CONST_NUMBER << '\s+') * 3) <<
+    'invoke-static \{[vp]\d+, [vp]\d+, [vp]\d+\}, L([^;]+);->([^\(]+\(III\))Ljava/lang/String;' \
+    '\s+' << MOVE_RESULT_OBJECT << ')',
+    Regexp::MULTILINE
+  )
 
   STRING_LOOKUP_1INT = Regexp.new(
-      '^[ \t]*(' <<
-          CONST_NUMBER << '\s+' <<
-          'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(I\))Ljava/lang/String;' <<
-          '\s+' <<
-          MOVE_RESULT_OBJECT <<
-          ')')
+    '^[ \t]*(' << CONST_NUMBER << '\s+' \
+    'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(I\))Ljava/lang/String;' \
+    '\s+' << MOVE_RESULT_OBJECT << ')'
+  )
 
   BYTES_DECRYPT = Regexp.new(
-      '^[ \t]*(' <<
-          CONST_STRING << '\s+' <<
-          'invoke-virtual \{[vp]\d+\}, Ljava\/lang\/String;->getBytes\(\)\[B\s+' <<
-          'move-result-object [vp]\d+\s+' <<
-          'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(\[B\))Ljava/lang/String;\s+' <<
-          MOVE_RESULT_OBJECT <<
-        ')')
+    '^[ \t]*(' << CONST_STRING << '\s+' \
+    'invoke-virtual \{[vp]\d+\}, Ljava\/lang\/String;->getBytes\(\)\[B\s+' \
+    'move-result-object [vp]\d+\s+' \
+    'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(\[B\))Ljava/lang/String;' \
+    '\s+' << MOVE_RESULT_OBJECT << ')'
+  )
 
   MULTI_BYTES_DECRYPT = Regexp.new(
-      '^[ \t]*(' <<
-          CONST_STRING << '\s+' <<
-          'new-instance ([vp]\d+), L[^;]+;\s+' <<
-          'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(Ljava/lang/String;\))\[B\s+' <<
-          'move-result-object [vp]\d+\s+' <<
-          CONST_STRING << '\s+' <<
-          'invoke-static \{[vp]\d+, [vp]\d+\}, L([^;]+);->([^\(]+\(\[BLjava/lang/String;\))\[B\s+' <<
-          'move-result-object [vp]\d+\s+' <<
-          'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(\[B\))\[B\s+' <<
-          'move-result-object [vp]\d+\s+' <<
-          'invoke-direct \{[vp]\d+, [vp]\d+\}, Ljava\/lang\/String;-><init>\(\[B\)V' <<
-          ')')
+    '^[ \t]*(' << CONST_STRING << '\s+' \
+    'new-instance ([vp]\d+), L[^;]+;\s+' \
+    'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(Ljava/lang/String;\))\[B\s+' \
+    'move-result-object [vp]\d+\s+' <<
+    CONST_STRING << '\s+' \
+    'invoke-static \{[vp]\d+, [vp]\d+\}, L([^;]+);->([^\(]+\(\[BLjava/lang/String;\))\[B\s+' \
+    'move-result-object [vp]\d+\s+' \
+    'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(\[B\))\[B\s+' \
+    'move-result-object [vp]\d+\s+' \
+    'invoke-direct \{[vp]\d+, [vp]\d+\}, Ljava\/lang\/String;-><init>\(\[B\)V' \
+    ')'
+  )
 
-  MODIFIER = lambda { |original, output, out_reg| "const-string #{out_reg}, \"#{output.split('').collect { |e| e.inspect[1..-2] }.join}\"" }
+  MODIFIER = -> (_, output, out_reg) { "const-string #{out_reg}, \"#{output.split('').collect { |e| e.inspect[1..-2] }.join}\"" }
 
   def initialize(driver, smali_files, methods)
     @driver = driver
@@ -61,7 +57,7 @@ class Undexguard < Plugin
       target_to_contexts.merge!(lookup_strings_3int(method))
       target_to_contexts.merge!(lookup_strings_1int(method))
       target_to_contexts.merge!(decrypt_bytes(method))
-      target_to_contexts.map { |k, v| v.uniq! }
+      target_to_contexts.map { |_, v| v.uniq! }
       method_to_target_to_contexts[method] = target_to_contexts unless target_to_contexts.empty?
     end
 
@@ -83,10 +79,10 @@ class Undexguard < Plugin
   private
 
   def self.array_string_to_array(str)
-      if str =~ /^\[(\d+(,|\]$))+/
+      if str =~ /\A\[(?:\d+(?:,\d+)*)?\]\z/
         str = eval(str)
       else
-        raise "Output is not in byte format; this frightens me: #{str}"
+        fail "Output is not in byte format; this frightens me: #{str}"
       end
       str
   end
@@ -99,7 +95,7 @@ class Undexguard < Plugin
       target = @driver.make_target(
         class_name, method_signature, arg1.to_i(16), arg2.to_i(16), arg3.to_i(16)
       )
-      target_to_contexts[target] = [] unless target_to_contexts.has_key?(target)
+      target_to_contexts[target] = [] unless target_to_contexts.key?(target)
       target_to_contexts[target] << [original, out_reg]
     end
 
@@ -114,7 +110,7 @@ class Undexguard < Plugin
       target = @driver.make_target(
         class_name, method_signature, arg1.to_i(16)
       )
-      target_to_contexts[target] = [] unless target_to_contexts.has_key?(target)
+      target_to_contexts[target] = [] unless target_to_contexts.key?(target)
       target_to_contexts[target] << [original, out_reg]
     end
 
@@ -129,7 +125,7 @@ class Undexguard < Plugin
       target = @driver.make_target(
         class_name, method_signature, encrypted.bytes.to_a
       )
-      target_to_contexts[target] = [] unless target_to_contexts.has_key?(target)
+      target_to_contexts[target] = [] unless target_to_contexts.key?(target)
       target_to_contexts[target] << [original, out_reg]
     end
 
@@ -141,10 +137,7 @@ class Undexguard < Plugin
     target_id_to_output = {}
     matches = method.body.scan(MULTI_BYTES_DECRYPT)
     @optimizations[:string_decrypts] += matches.size if matches
-    matches.each do |original, iv_str, out_reg, iv_class_name, iv_method_signature,
-        iv2_str, iv2_class_name, iv2_method_signature,
-        dec_class_name, dec_method_signature|
-
+    matches.each do |original, iv_str, out_reg, iv_class_name, iv_method_signature, iv2_str, iv2_class_name, iv2_method_signature, dec_class_name, dec_method_signature|
       iv_bytes = @driver.run(iv_class_name, iv_method_signature, iv_str)
       enc_bytes = @driver.run(iv2_class_name, iv2_method_signature, iv_bytes, iv2_str)
       dec_bytes = @driver.run(dec_class_name, dec_method_signature, enc_bytes)
@@ -153,7 +146,7 @@ class Undexguard < Plugin
 
       target = { id: Digest::SHA256.hexdigest(original) }
       target_id_to_output[target[:id]] = ['success', dec_string]
-      target_to_contexts[target] = [] unless target_to_contexts.has_key?(target)
+      target_to_contexts[target] = [] unless target_to_contexts.key?(target)
       target_to_contexts[target] << [original, out_reg]
     end
 

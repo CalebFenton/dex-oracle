@@ -6,14 +6,12 @@ class StringDecryptor < Plugin
   include CommonRegex
 
   STRING_DECRYPT = Regexp.new(
-      '^[ \t]*(' <<
-          CONST_STRING << '\s+' <<
-          'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(Ljava/lang/String;\))Ljava/lang/String;' <<
-          '\s+' <<
-          MOVE_RESULT_OBJECT <<
-          ')')
+    '^[ \t]*(' << CONST_STRING << '\s+' \
+    'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(Ljava/lang/String;\))Ljava/lang/String;' \
+    '\s+' << MOVE_RESULT_OBJECT << ')'
+  )
 
-  MODIFIER = lambda { |original, output, out_reg| "const-string #{out_reg}, \"#{output.split('').collect { |e| e.inspect[1..-2] }.join}\"" }
+  MODIFIER = -> (_, output, out_reg) { "const-string #{out_reg}, \"#{output.split('').collect { |e| e.inspect[1..-2] }.join}\"" }
 
   def initialize(driver, smali_files, methods)
     @driver = driver
@@ -28,7 +26,7 @@ class StringDecryptor < Plugin
       logger.info("Decrypting strings #{method.descriptor}")
       target_to_contexts = {}
       target_to_contexts.merge!(decrypt_strings(method))
-      target_to_contexts.map { |k, v| v.uniq! }
+      target_to_contexts.map { |_, v| v.uniq! }
       method_to_target_to_contexts[method] = target_to_contexts unless target_to_contexts.empty?
     end
 
@@ -42,7 +40,7 @@ class StringDecryptor < Plugin
     @optimizations
   end
 
-private
+  private
 
   def decrypt_strings(method)
     target_to_contexts = {}
@@ -52,7 +50,7 @@ private
       target = @driver.make_target(
         class_name, method_signature, encrypted
       )
-      target_to_contexts[target] = [] unless target_to_contexts.has_key?(target)
+      target_to_contexts[target] = [] unless target_to_contexts.key?(target)
       target_to_contexts[target] << [original, out_reg]
     end
 
