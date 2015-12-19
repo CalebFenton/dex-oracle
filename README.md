@@ -69,6 +69,7 @@ Method execution is performed by the [Driver](driver/src/main/java/org/cf/oracle
 
 ## Hacking
 
+### Creating Your Own Plugin
 There are three [plugins](lib/dex-oracle/plugins) which come with Oracle:
 
 1. [Undexguard](lib/dex-oracle/plugins/undexguard.rb) - removes certain types of Dexguard obfuscations
@@ -90,3 +91,9 @@ If either of these two are the case, you should try and write your own plugin. T
 The included plugins should be a good guide for understanding steps #3 and #4. Driver is designed to help with step #2.
 
 Of course, you're always welcome to share whatever obfuscation you come across and someone may eventually get to it.
+
+### Updating Driver
+First, ensure `dx` is on your path. This is part of the Android SDK.
+
+The [driver](driver) folder is a Java project managed by Gradle. Import it into Eclipse, IntelliJ, etc. and make any changes you like. To finish updating the driver, run `./update_driver`. This will rebuild the driver and convert the output JAR into a DEX.
+`./gradlew buil`
