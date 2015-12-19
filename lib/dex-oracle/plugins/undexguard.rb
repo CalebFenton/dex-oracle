@@ -140,7 +140,7 @@ class Undexguard < Plugin
       if str =~ /^\[(\d+(,|\]$))+/
         str = eval(str)
       else
-        raise "Output is not in byte format, which frightens me: #{str}"
+        raise "Output is not in byte format; this frightens me: #{str}"
       end
       str
   end
