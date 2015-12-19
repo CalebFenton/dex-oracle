@@ -93,7 +93,6 @@ The included plugins should be a good guide for understanding steps #3 and #4. D
 Of course, you're always welcome to share whatever obfuscation you come across and someone may eventually get to it.
 
 ### Updating Driver
-First, ensure `dx` is on your path. This is part of the Android SDK.
+First, ensure `dx` is on your path. This is part of the Android SDK, but it's probably not on your path unless you're hardcore.
 
 The [driver](driver) folder is a Java project managed by Gradle. Import it into Eclipse, IntelliJ, etc. and make any changes you like. To finish updating the driver, run `./update_driver`. This will rebuild the driver and convert the output JAR into a DEX.
-`./gradlew buil`
