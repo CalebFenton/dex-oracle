@@ -16,4 +16,3 @@
 
     return-void
 .end method
-

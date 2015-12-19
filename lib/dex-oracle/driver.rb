@@ -27,7 +27,7 @@ class Driver
     @timeout = timeout
 
     device_str = device_id.empty? ? '' : "-s #{@device_id} "
-    @adb_base = "adb #{device_str} %s"
+    @adb_base = "adb #{device_str}%s"
     @cmd_stub = "export CLASSPATH=#{DRIVER_DIR}/od.zip; app_process /system/bin #{DRIVER_CLASS}"
 
     @cache = {}
