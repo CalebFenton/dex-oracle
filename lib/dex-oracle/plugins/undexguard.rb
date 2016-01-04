@@ -61,8 +61,7 @@ class Undexguard < Plugin
       method_to_target_to_contexts[method] = target_to_contexts unless target_to_contexts.empty?
     end
 
-    made_changes = false
-    made_changes |= Plugin.apply_batch(@driver, method_to_target_to_contexts, MODIFIER)
+    made_changes = Plugin.apply_batch(@driver, method_to_target_to_contexts, MODIFIER)
 
     @methods.each do |method|
       logger.info("Undexguarding #{method.descriptor} - stage 2/2")
