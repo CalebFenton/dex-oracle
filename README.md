@@ -96,3 +96,7 @@ Of course, you're always welcome to share whatever obfuscation you come across a
 First, ensure `dx` is on your path. This is part of the Android SDK, but it's probably not on your path unless you're hardcore.
 
 The [driver](driver) folder is a Java project managed by Gradle. Import it into Eclipse, IntelliJ, etc. and make any changes you like. To finish updating the driver, run `./update_driver`. This will rebuild the driver and convert the output JAR into a DEX.
+
+## More Information
+
+[TetCon 2016 Android Deobfuscation Presentation](http://www.slideshare.net/tekproxy/tetcon-2016)
