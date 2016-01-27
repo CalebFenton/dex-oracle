@@ -51,6 +51,8 @@ class Driver
       tz = Tempfile.new(['oracle-driver', '.zip'])
       Utility.create_zip(tz.path, { 'classes.dex' => tf })
       adb("push #{tz.path} #{DRIVER_DIR}/od.zip")
+    rescue => e
+      puts "Error installing the driver: #{e}"
     ensure
       tf.close
       tf.unlink

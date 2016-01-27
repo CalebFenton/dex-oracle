@@ -1,5 +1,6 @@
 sandbox/
 *.apk
 *.dex
+!res/driver.dex
 *.json
 Gemfile.lock
