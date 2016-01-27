@@ -2,6 +2,7 @@ require 'json'
 require 'digest'
 require 'Open3'
 require 'timeout'
+require_relative 'resources'
 require_relative 'logging'
 require_relative 'utility'
 
@@ -19,8 +20,6 @@ class Driver
   OUTPUT_HEADER = '===ORACLE DRIVER OUTPUT==='
   DRIVER_DIR = '/data/local'
   DRIVER_CLASS = 'org.cf.oracle.Driver'
-  DX_PATH = 'res/dx.jar'
-  DRIVER_DEX_PATH = 'res/driver.dex'
 
   def initialize(device_id, timeout = 60)
     @device_id = device_id
@@ -40,10 +39,10 @@ class Driver
       # Merge driver and target dex file
       # Congratulations. You're now one of the 5 people who've used this tool explicitly.
       logger.debug("Merging #{dex.path} and driver dex ...")
-      fail "#{DX_PATH} does not exist and is required for DexMerger" unless File.exist?(DX_PATH)
-      fail "#{DRIVER_DEX_PATH} does not exist" unless File.exist?(DRIVER_DEX_PATH)
+      fail "#{Resources.dx} does not exist and is required for DexMerger" unless File.exist?(Resources.dx)
+      fail "#{Resources.driver_dex} does not exist" unless File.exist?(Resources.driver_dex)
       tf = Tempfile.new(['oracle-driver', '.dex'])
-      cmd = "java -cp #{DX_PATH} com.android.dx.merge.DexMerger #{tf.path} #{dex.path} #{DRIVER_DEX_PATH}"
+      cmd = "java -cp #{Resources.dx} com.android.dx.merge.DexMerger #{tf.path} #{dex.path} #{Resources.driver_dex}"
       exec("#{cmd}")
 
       # Zip merged dex and push to device
