@@ -1,6 +1,6 @@
 require 'json'
 require 'digest'
-require 'Open3'
+require 'open3'
 require 'timeout'
 require_relative 'resources'
 require_relative 'logging'
