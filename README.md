@@ -7,8 +7,6 @@ A pattern based Dalvik deobfuscator which uses limited execution to improve sema
 **After**
 ![after](http://i.imgur.com/aFFd9eM.png)
 
-Bitcoin: 133bmAUshC5VxntCcusWJdT8Sq3BFsaGce
-
 ## Installation
 
 ### Step 1. Install Smali / Baksmali
