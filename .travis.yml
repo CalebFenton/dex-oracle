@@ -9,6 +9,5 @@ before_script:
   - curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali
   - chmod +x ./smali ./baksmali
   - export PATH=$PATH:$PWD
-  - baksmali -h
   - cd ..
 script: bundle exec rspec
