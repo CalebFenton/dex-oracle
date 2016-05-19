@@ -1,5 +1,11 @@
 language: ruby
 rvm:
- - 2.2
-# uncomment and edit the following line if your project needs to run something other than `rake`:
+  - 2.2
+before_script:
+  - mkdir bin && cd bin
+  - curl -O https://bitbucket.org/JesusFreke/smali/downloads/smali-2.1.2.jar
+  - curl -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.1.2.jar
+  - curl -O https://bitbucket.org/JesusFreke/smali/downloads/smali
+  - curl -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali
+  - export PATH=$PATH:$PWD
 script: bundle exec rspec
