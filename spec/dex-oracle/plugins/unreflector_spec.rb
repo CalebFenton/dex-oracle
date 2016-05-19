@@ -18,7 +18,7 @@ describe Unreflector do
 
       it do
         expect(Plugin).to receive(:apply_outputs).with(
-          { batch_id => ['success', 'Landroid/content/Intent;'] },
+          { batch_id => %w(success Landroid/content/Intent;) },
           { method => { batch => [batch_item] } },
           kind_of(Proc)
         )

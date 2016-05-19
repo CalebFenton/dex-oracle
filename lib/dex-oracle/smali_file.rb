@@ -7,7 +7,7 @@ class SmaliFile
 
   include Logging
 
-  ACCESSOR = /(?:interface|public|protected|private|abstract|static|final|synchronized|transient|volatile|native|strictfp|synthetic|enum|annotation)/
+  ACCESSOR = /(?:interface|public|protected|private|abstract|static|final|synchronized|transient|volatile|native|strictfp|synthetic|enum|annotation|constructor)/
   TYPE = /(?:[IJFDZBCV]|L[^;]+;)/
   CLASS = /^\.class (?:#{ACCESSOR} )+(L[^;]+;)/
   SUPER = /^\.super (L[^;]+;)/
