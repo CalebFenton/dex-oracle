@@ -3,8 +3,8 @@ rvm:
   - 2.2
 before_script:
   - mkdir bin-test && cd bin-test
-  - curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/smali-2.1.2.jar
-  - curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.1.2.jar
+  - curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/smali-2.1.2.jar && mv smali-*.jar smali.jar
+  - curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.1.2.jar && mv baksmali-*.jar baksmali.jar
   - curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/smali
   - curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali
   - chmod +x ./smali ./baksmali
