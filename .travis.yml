@@ -5,8 +5,10 @@ before_script:
   - mkdir bin-test && cd bin-test
   - curl -O https://bitbucket.org/JesusFreke/smali/downloads/smali-2.1.2.jar
   - curl -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.1.2.jar
-  - curl -O https://bitbucket.org/JesusFreke/smali/downloads/smali
-  - curl -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali
+  - curl -O https://bitbucket.org/JesusFreke/smali/downloads/smali && chmod +x smali
+  - curl -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali && chmod +x baksmali
+  - baksmali -h
   - export PATH=$PATH:$PWD
   - cd ..
+  - echo $PATH
 script: bundle exec rspec
