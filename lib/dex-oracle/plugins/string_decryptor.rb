@@ -2,16 +2,20 @@ require_relative '../logging'
 require_relative '../utility'
 
 class StringDecryptor < Plugin
+  attr_reader :optimizations
+
   include Logging
   include CommonRegex
 
   STRING_DECRYPT = Regexp.new(
-    '^[ \t]*(' << CONST_STRING << '\s+' \
+    '^[ \t]*(' + CONST_STRING + '\s+' \
     'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(Ljava/lang/String;\))Ljava/lang/String;' \
-    '\s+' << MOVE_RESULT_OBJECT << ')'
+    '\s+' + MOVE_RESULT_OBJECT + ')'
   )
 
-  MODIFIER = -> (_, output, out_reg) { "const-string #{out_reg}, \"#{output.split('').collect { |e| e.inspect[1..-2] }.join}\"" }
+  MODIFIER = -> (_, output, out_reg) {
+    "const-string #{out_reg}, \"#{output.split('').collect { |e| e.inspect[1..-2] }.join}\""
+  }
 
   def initialize(driver, smali_files, methods)
     @driver = driver
@@ -34,10 +38,6 @@ class StringDecryptor < Plugin
     made_changes |= Plugin.apply_batch(@driver, method_to_target_to_contexts, MODIFIER)
 
     made_changes
-  end
-
-  def optimizations
-    @optimizations
   end
 
   private

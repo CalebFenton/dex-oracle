@@ -6,10 +6,10 @@ class Resources
   PATH = File.join(File.dirname(File.expand_path(__FILE__)), '../../res')
 
   def self.dx
-    return "#{PATH}/dx.jar"
+    "#{PATH}/dx.jar"
   end
 
   def self.driver_dex
-    return "#{PATH}/driver.dex"
+    "#{PATH}/driver.dex"
   end
 end

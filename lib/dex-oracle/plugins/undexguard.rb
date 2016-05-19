@@ -2,36 +2,38 @@ require_relative '../logging'
 require_relative '../utility'
 
 class Undexguard < Plugin
+  attr_reader :optimizations
+
   include Logging
   include CommonRegex
 
   STRING_LOOKUP_3INT = Regexp.new(
-    '^[ \t]*(' << ((CONST_NUMBER << '\s+') * 3) <<
+    '^[ \t]*(' + ((CONST_NUMBER + '\s+') * 3) +
     'invoke-static \{[vp]\d+, [vp]\d+, [vp]\d+\}, L([^;]+);->([^\(]+\(III\))Ljava/lang/String;' \
-    '\s+' << MOVE_RESULT_OBJECT << ')',
+    '\s+' + MOVE_RESULT_OBJECT + ')',
     Regexp::MULTILINE
   )
 
   STRING_LOOKUP_1INT = Regexp.new(
-    '^[ \t]*(' << CONST_NUMBER << '\s+' \
+    '^[ \t]*(' + CONST_NUMBER + '\s+' \
     'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(I\))Ljava/lang/String;' \
-    '\s+' << MOVE_RESULT_OBJECT << ')'
+    '\s+' + MOVE_RESULT_OBJECT + ')'
   )
 
   BYTES_DECRYPT = Regexp.new(
-    '^[ \t]*(' << CONST_STRING << '\s+' \
+    '^[ \t]*(' + CONST_STRING + '\s+' \
     'invoke-virtual \{[vp]\d+\}, Ljava\/lang\/String;->getBytes\(\)\[B\s+' \
     'move-result-object [vp]\d+\s+' \
     'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(\[B\))Ljava/lang/String;' \
-    '\s+' << MOVE_RESULT_OBJECT << ')'
+    '\s+' + MOVE_RESULT_OBJECT + ')'
   )
 
   MULTI_BYTES_DECRYPT = Regexp.new(
-    '^[ \t]*(' << CONST_STRING << '\s+' \
+    '^[ \t]*(' + CONST_STRING + '\s+' \
     'new-instance ([vp]\d+), L[^;]+;\s+' \
     'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(Ljava/lang/String;\))\[B\s+' \
-    'move-result-object [vp]\d+\s+' <<
-    CONST_STRING << '\s+' \
+    'move-result-object [vp]\d+\s+' +
+    CONST_STRING + '\s+' \
     'invoke-static \{[vp]\d+, [vp]\d+\}, L([^;]+);->([^\(]+\(\[BLjava/lang/String;\))\[B\s+' \
     'move-result-object [vp]\d+\s+' \
     'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(\[B\))\[B\s+' \
@@ -40,7 +42,9 @@ class Undexguard < Plugin
     ')'
   )
 
-  MODIFIER = -> (_, output, out_reg) { "const-string #{out_reg}, \"#{output.split('').collect { |e| e.inspect[1..-2] }.join}\"" }
+  MODIFIER = -> (_, output, out_reg) {
+    "const-string #{out_reg}, \"#{output.split('').collect { |e| e.inspect[1..-2] }.join}\""
+  }
 
   def initialize(driver, smali_files, methods)
     @driver = driver
@@ -71,20 +75,7 @@ class Undexguard < Plugin
     made_changes
   end
 
-  def optimizations
-    @optimizations
-  end
-
   private
-
-  def self.array_string_to_array(str)
-      if str =~ /\A\[(?:\d+(?:,\d+)*)?\]\z/
-        str = eval(str)
-      else
-        fail "Output is not in byte format; this frightens me: #{str}"
-      end
-      str
-  end
 
   def lookup_strings_3int(method)
     target_to_contexts = {}
@@ -140,7 +131,7 @@ class Undexguard < Plugin
       iv_bytes = @driver.run(iv_class_name, iv_method_signature, iv_str)
       enc_bytes = @driver.run(iv2_class_name, iv2_method_signature, iv_bytes, iv2_str)
       dec_bytes = @driver.run(dec_class_name, dec_method_signature, enc_bytes)
-      dec_array = Undexguard.array_string_to_array(dec_bytes)
+      dec_array = array_string_to_array(dec_bytes)
       dec_string = dec_array.pack('U*')
 
       target = { id: Digest::SHA256.hexdigest(original) }
@@ -151,5 +142,14 @@ class Undexguard < Plugin
 
     method_to_target_to_contexts = { method => target_to_contexts }
     Plugin.apply_outputs(target_id_to_output, method_to_target_to_contexts, MODIFIER)
+  end
+
+  def array_string_to_array(str)
+    if str =~ /\A\[(?:\d+(?:,\d+)*)?\]\z/
+      str = eval(str)
+    else
+      fail "Output is not in byte format; this frightens me: #{str}"
+    end
+    str
   end
 end

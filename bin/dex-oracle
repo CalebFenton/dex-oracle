@@ -29,7 +29,7 @@ optparse = OptionParser.new do |opts|
     options[:device_id] = id
   end
 
-  opts.on('-t', '--timeout N',
+  opts.on('-t', '--timeout N', Integer,
           "ADB command execution timeout in seconds, default=\"#{options[:timeout]}\"") do |id|
     options[:timeout] = id
   end

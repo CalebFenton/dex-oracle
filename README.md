@@ -1,4 +1,5 @@
 # Oracle
+
 A pattern based Dalvik deobfuscator which uses limited execution to improve semantic analysis. Also, the inspiration for another Android deobfuscator: [Simplify](https://github.com/CalebFenton/simplify).
 
 [![Gem Version](https://badge.fury.io/rb/dex-oracle.svg)](https://badge.fury.io/rb/dex-oracle)
@@ -11,21 +12,39 @@ A pattern based Dalvik deobfuscator which uses limited execution to improve sema
 **After**
 ![after](http://i.imgur.com/aFFd9eM.png)
 
+_sha1: a68d5d2da7550d35f7dbefc21b7deebe3f4005f3_
+
+_md5: 2dd2eeeda08ac8c15be8a9f2d01adbe8_
+
 ## Installation
 
 ### Step 1. Install Smali / Baksmali
-I'm sure since you're an elite Android reverser you already have smali and baksmali on your path.
+
+Since you're an elite Android reverser, I'm sure you already have Smali and Baksmali on your path. If for some strange reason it's not already installed, this should get you started, but please examine it carefully before running:
+
+```bash
+mkdir ~/bin || cd ~/bin
+curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/smali-2.1.2.jar && mv smali-*.jar smali.jar
+curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.1.2.jar && mv baksmali-*.jar baksmali.jar
+curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/smali
+curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali
+chmod +x ./smali ./baksmali
+export PATH=$PATH:$PWD
+```
 
 ### Step 2. Install Android SDK / ADB
+
 Make sure `adb` is on your path.
 
 ### Step 3. Install the Gem
-```
+
+```bash
 gem install dex-oracle
 ```
 
 Or, if you prefer to build from source:
-```
+
+```bash
 git clone https://github.com/CalebFenton/dex-oracle.git
 cd dex-oracle
 gem install bundler
@@ -33,16 +52,19 @@ bundle install
 ```
 
 ### Step 4. Connect a Device or Emulator
+
 _You must have either an emulator running or a device plugged in for Oracle to work._
 
 Oracle needs to execute  methods on an live Android system. This can either be on a device or an emulator (preferred). If it's a device, _make sure you don't mind running potentially hostile code on it_.
 
 If you'd like to use an emulator, and already have the Android SDK installed, you can create and start emulator images with:
-```
+
+```bash
 android avd
 ```
 
 ## Usage
+
 ```
 Usage: dex-oracle [opts] <APK / DEX / Smali Directory>
     -h, --help                       Display this screen
@@ -60,18 +82,20 @@ Usage: dex-oracle [opts] <APK / DEX / Smali Directory>
 
 For example, to only deobfuscate methods in a class called `Lcom/android/system/admin/CCOIoll;` inside of an APK called `obad.apk`:
 
-```
+```bash
 dex-oracle -i com/android/system/admin/CCOIoll obad.apk
 ```
 
 ## How it Works
+
 Oracle takes Android apps (APK), Dalvik executables (DEX), and Smali files as inputs. First, if the input is an APK or DEX, it is disassembled into Smali files. Then, the Smali files are passed to various plugins which perform analysis and modifications. Plugins search for patterns which can be transformed into something easier to read. In order to understand what the code is doing, some Dalvik methods are actually executed with and the output is collected. This way, some method calls can be replaced with constants. After that, all of the Smali files are updated. Finally, if the input was an APK or a DEX file, the modified Smali files are recompiled and an updated APK or DEX is created.
 
-Method execution is performed by the [Driver](driver/src/main/java/org/cf/oracle/Driver.java). The input APK, DEX, or Smali is combined with the Driver into a single DEX using dexmerge and pushed onto a device or emulator. Oracle then sends method execution information to Driver whenever a plugin requests it. Driver uses Java reflection to execute methods within its own DEX with the arguments provided by Oracle and returns any output or exceptions. This is especially useful for many string decryption methods, which usually take an encrypted string or some One limitation is that execution is limited to static methods.
+Method execution is performed by the [Driver](driver/src/main/java/org/cf/oracle/Driver.java). The input APK, DEX, or Smali is combined with the Driver into a single DEX using dexmerge and is pushed onto a device or emulator. Plugins can then use Driver which uses Java reflection to execute methods from the input DEX. The return values can be used to improve semantic analysis beyond mere pattern recognition. This is especially useful for many string decryption methods, which usually take an encrypted string or some byte array. One limitation is that execution is limited to static methods.
 
 ## Hacking
 
 ### Creating Your Own Plugin
+
 There are three [plugins](lib/dex-oracle/plugins) which come with Oracle:
 
 1. [Undexguard](lib/dex-oracle/plugins/undexguard.rb) - removes certain types of Dexguard obfuscations
@@ -95,6 +119,7 @@ The included plugins should be a good guide for understanding steps #3 and #4. D
 Of course, you're always welcome to share whatever obfuscation you come across and someone may eventually get to it.
 
 ### Updating Driver
+
 First, ensure `dx` is on your path. This is part of the Android SDK, but it's probably not on your path unless you're hardcore.
 
 The [driver](driver) folder is a Java project managed by Gradle. Import it into Eclipse, IntelliJ, etc. and make any changes you like. To finish updating the driver, run `./update_driver`. This will rebuild the driver and convert the output JAR into a DEX.

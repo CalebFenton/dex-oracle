@@ -1,0 +1,47 @@
+---
+engines:
+  duplication:
+    enabled: true
+    config:
+      languages:
+      - ruby
+      - javascript
+      - python
+      - php
+  fixme:
+    enabled: true
+  rubocop:
+    enabled: true
+    checks:
+      Metrics/LineLength:
+        Enabled: false
+
+      Metrics/MethodLength:
+        CountComments: false
+        Max: 30
+
+      Style/IndentationWidth:
+        Enabled: false
+
+      Style/LeadingCommentSpace:
+        Enabled: false
+
+      Style/DoubleNegation:
+        Enabled: false
+
+      Style/TrailingComma:
+        Enabled: false
+
+      Documentation:
+        Enabled: false
+ratings:
+  paths:
+  - "**.inc"
+  - "**.js"
+  - "**.jsx"
+  - "**.module"
+  - "**.php"
+  - "**.py"
+  - "**.rb"
+exclude_paths:
+- spec/

@@ -22,7 +22,7 @@ EOF
     [:development, 'rspec-mocks', '~> 3.4', '>= 3.4.0'],
   ]
 
-  exclude_files = Dir['driver/build/**/*'] + Dir['driver/bin/**/*'] + Dir['sandbox/**/*'] + ['driver/build', 'driver/bin', 'sandbox']
+  exclude_files = Dir['driver/build/**/*'] + Dir['driver/bin/**/*'] + Dir['sandbox/**/*'] + %w(driver/build driver/bin sandbox)
   s.files         = Dir['**/*'] - exclude_files
   s.test_files    = Dir['test/**/*'] + Dir['spec/**/*']
   s.executables   = Dir['bin/*'].map { |f| File.basename(f) }

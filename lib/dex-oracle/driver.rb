@@ -14,12 +14,12 @@ class Driver
     'n' => "\x0a", 'v' => "\x0b", 'f' => "\x0c",
     'r' => "\x0d", 'e' => "\x1b", '\\' => "\x5c",
     '"' => "\x22", "'" => "\x27"
-  }
+  }.freeze
   UNESCAPE_REGEX = /\\(?:([#{UNESCAPES.keys.join}])|u([\da-fA-F]{4}))|\\0?x([\da-fA-F]{2})/
 
-  OUTPUT_HEADER = '===ORACLE DRIVER OUTPUT==='
-  DRIVER_DIR = '/data/local'
-  DRIVER_CLASS = 'org.cf.oracle.Driver'
+  OUTPUT_HEADER = '===ORACLE DRIVER OUTPUT==='.freeze
+  DRIVER_DIR = '/data/local'.freeze
+  DRIVER_CLASS = 'org.cf.oracle.Driver'.freeze
 
   def initialize(device_id, timeout = 60)
     @device_id = device_id
@@ -33,30 +33,30 @@ class Driver
   end
 
   def install(dex)
-    fail 'Unable to find Java on the path.' unless Utility.which('java')
+    raise 'Unable to find Java on the path.' unless Utility.which('java')
 
     begin
       # Merge driver and target dex file
       # Congratulations. You're now one of the 5 people who've used this tool explicitly.
       logger.debug("Merging #{dex.path} and driver dex ...")
-      fail "#{Resources.dx} does not exist and is required for DexMerger" unless File.exist?(Resources.dx)
-      fail "#{Resources.driver_dex} does not exist" unless File.exist?(Resources.driver_dex)
+      raise "#{Resources.dx} does not exist and is required for DexMerger" unless File.exist?(Resources.dx)
+      raise "#{Resources.driver_dex} does not exist" unless File.exist?(Resources.driver_dex)
       tf = Tempfile.new(['oracle-driver', '.dex'])
       cmd = "java -cp #{Resources.dx} com.android.dx.merge.DexMerger #{tf.path} #{dex.path} #{Resources.driver_dex}"
-      exec("#{cmd}")
+      exec(cmd.to_s)
 
       # Zip merged dex and push to device
       logger.debug('Pushing merged driver to device ...')
-      tz = Tempfile.new(['oracle-driver', '.zip'])
-      Utility.create_zip(tz.path, { 'classes.dex' => tf })
+      tz = Tempfile.new(%w(oracle-driver .zip))
+      Utility.create_zip(tz.path, 'classes.dex' => tf)
       adb("push #{tz.path} #{DRIVER_DIR}/od.zip")
     rescue => e
       puts "Error installing the driver: #{e}"
     ensure
-      tf.close
-      tf.unlink
-      tz.close
-      tz.unlink
+      tf.close if tf
+      tf.unlink if tf
+      tz.close if tz
+      tz.unlink if tz
     end
   end
 
@@ -71,15 +71,14 @@ class Driver
       # If you slam an emulator or device with too many app_process commands,
       # it eventually gets angry and segmentation faults. No idea why.
       # This took many frustrating hours to figure out.
-      if retries <= 3
-        logger.debug("Driver execution failed. Taking a quick nap and retrying, Zzzzz ##{retries} / 3 ...")
-        sleep 5
-        retries += 1
-        retry
-      else
-        raise e
-      end
+      raise e if retries > 3
+
+      logger.debug("Driver execution failed. Taking a quick nap and retrying, Zzzzz ##{retries} / 3 ...")
+      sleep 5
+      retries += 1
+      retry
     end
+
     output
   end
 
@@ -89,15 +88,13 @@ class Driver
     begin
       drive("#{@cmd_stub} @#{DRIVER_DIR}/od-targets.json", true)
     rescue => e
-      if retries <= 3 && e.message.include?('Segmentation fault')
-        # Maybe we just need to retry
-        logger.debug("Driver execution segfaulted. Taking a quick nap and retrying, Zzzzz ##{retries} / 3 ...")
-        sleep 5
-        retries += 1
-        retry
-      else
-        raise e
-      end
+      raise e if retries > 3 || !e.message.include?('Segmentation fault')
+
+      # Maybe we just need to retry
+      logger.debug("Driver execution segfaulted. Taking a quick nap and retrying, Zzzzz ##{retries} / 3 ...")
+      sleep 5
+      retries += 1
+      retry
     end
     pull_batch_outputs
   end
@@ -107,7 +104,7 @@ class Driver
     target = {
       className: method.class.tr('/', '.'),
       methodName: method.name,
-      arguments: Driver.build_arguments(method.parameters, args)
+      arguments: build_arguments(method.parameters, args)
     }
     # Identifiers are used to map individual inputs to outputs
     target[:id] = Digest::SHA256.hexdigest(target.to_json)
@@ -118,7 +115,7 @@ class Driver
   private
 
   def push_batch_targets(batch)
-    target_file = Tempfile.new(['oracle-targets', '.json'])
+    target_file = Tempfile.new(%w(oracle-targets .json))
     target_file << batch.to_json
     target_file.flush
     logger.info("Pushing #{batch.size} method targets to device ...")
@@ -153,14 +150,12 @@ class Driver
         end
       end
     rescue => e
-      if retries <= 3
-        logger.debug("ADB command execution timed out, retrying #{retries} ...")
-        sleep 5
-        retries += 1
-        retry
-      else
-        raise e
-      end
+      raise e if retries > 3
+
+      logger.debug("ADB command execution timed out, retrying #{retries} ...")
+      sleep 5
+      retries += 1
+      retry
     end
   end
 
@@ -170,14 +165,14 @@ class Driver
     if exit_code != 0
       # Non zero exit code would only imply adb command itself was flawed
       # app_process, dalvikvm, etc. don't propigate exit codes back
-      fail "Command failed with #{exit_code}: #{full_cmd}\nOutput: #{full_output}"
+      raise "Command failed with #{exit_code}: #{full_cmd}\nOutput: #{full_output}"
     end
 
     # Successful driver run should include driver header
     # Otherwise it may be a Segmentation fault or Killed
     logger.debug("Full output: #{full_output.inspect}")
     header = output_lines[0]
-    fail "app_process execution failure, output: '#{full_output}'" if header != OUTPUT_HEADER
+    raise "app_process execution failure, output: '#{full_output}'" if header != OUTPUT_HEADER
 
     output_lines[1..-2].join("\n").rstrip
   end
@@ -195,7 +190,7 @@ class Driver
     exception = adb("shell cat #{DRIVER_DIR}/od-exception.txt").strip
     unless exception.end_with?('No such file or directory')
       adb("shell rm #{DRIVER_DIR}/od-exception.txt")
-      fail exception
+      raise exception
     end
     logger.debug('No exceptions found :)')
 
@@ -208,10 +203,21 @@ class Driver
 
   def adb(cmd)
     full_cmd = @adb_base % cmd
-    exec(full_cmd).rstrip
+    exec(full_cmd, false).rstrip
   end
 
-  def self.unescape(str)
+  def build_command(class_name, method_name, parameters, args)
+    class_name.tr!('/', '.') # Make valid Java class name
+    class_name.gsub!('$', '\$') # inner classes
+    method_name.gsub!('$', '\$') # synthetic method names
+    target = "'#{class_name}' '#{method_name}'"
+    target_args = build_arguments(parameters, args)
+    "#{@cmd_stub} #{target} #{target_args * ' '}"
+  end
+
+  private
+
+  def unescape(str)
     str.gsub(UNESCAPE_REGEX) do
       if Regexp.last_match[1]
         Regexp.last_match[1] == '\\' ? Regexp.last_match[1] : UNESCAPES[Regexp.last_match[1]]
@@ -223,28 +229,17 @@ class Driver
     end
   end
 
-  def build_command(class_name, method_name, parameters, args)
-    class_name.tr!('/', '.') # Make valid Java class name
-    class_name.gsub!('$', '\$') # inner classes
-    method_name.gsub!('$', '\$') # synthetic method names
-    target = "'#{class_name}' '#{method_name}'"
-    target_args = Driver.build_arguments(parameters, args)
-    "#{@cmd_stub} #{target} #{target_args * ' '}"
+  def build_arguments(parameters, args)
+    parameters.map.with_index { |o, i| build_argument(o, args[i]) }
   end
 
-  def self.build_arguments(parameters, args)
-    parameters.map.with_index do |o, i|
-      build_argument(o, args[i])
-    end
-  end
-
-  def self.build_argument(parameter, argument)
+  def build_argument(parameter, argument)
     if parameter[0] == 'L'
       java_type = parameter[1..-2].tr('/', '.')
       if java_type == 'java.lang.String'
         # Need to unescape smali string to get the actual string
         # Converting to bytes just avoids any weird non-printable characters nonsense
-        argument = "[#{Driver.unescape(argument).bytes.to_a.join(',')}]"
+        argument = "[#{unescape(argument).bytes.to_a.join(',')}]"
       end
       "#{java_type}:#{argument}"
     else

@@ -13,7 +13,7 @@ class SmaliFile
   SUPER = /^\.super (L[^;]+;)/
   INTERFACE = /^\.implements (L[^;]+;)/
   FIELD = /^\.field (?:#{ACCESSOR} )+([^\s]+)$/
-  METHOD = /^.method (?:#{ACCESSOR} )+([^\s]+)$/
+  METHOD = /^\.method (?:#{ACCESSOR} )+([^\s]+)$/
 
   def initialize(file_path)
     @file_path = file_path
@@ -38,6 +38,7 @@ class SmaliFile
   private
 
   def parse(file_path)
+    logger.debug("Parsing Smali file: #{file_path} ...")
     @content = IO.read(file_path)
     @class = @content[CLASS, 1]
     @super = @content[SUPER, 1]

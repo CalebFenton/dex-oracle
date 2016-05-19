@@ -2,46 +2,48 @@ require 'digest'
 require_relative '../logging'
 
 class Unreflector < Plugin
+  attr_reader :optimizations
+
   include Logging
   include CommonRegex
 
-  attr_reader :optimizations
-
-  CLASS_FOR_NAME = 'invoke-static \{[vp]\d+\}, Ljava\/lang\/Class;->forName\(Ljava\/lang\/String;\)Ljava\/lang\/Class;'
+  CLASS_FOR_NAME = 'invoke-static \{[vp]\d+\}, Ljava\/lang\/Class;->forName\(Ljava\/lang\/String;\)Ljava\/lang\/Class;'.freeze
 
   CONST_CLASS_REGEX = Regexp.new(
-    '^[ \t]*(' << CONST_STRING << '\s+' <<
-    CLASS_FOR_NAME << '\s+' <<
-    MOVE_RESULT_OBJECT << ')'
+    '^[ \t]*(' + CONST_STRING + '\s+' +
+    CLASS_FOR_NAME + '\s+' +
+    MOVE_RESULT_OBJECT + ')'
   )
 
   VIRTUAL_FIELD_LOOKUP = Regexp.new(
-    '^[ \t]*(' <<
-    CONST_STRING << '\s+' \
-    'invoke-static \{[vp]\d+\}, Ljava\/lang\/Class;->forName\(Ljava\/lang\/String;\)Ljava\/lang\/Class;\s+' <<
-    MOVE_RESULT_OBJECT << '\s+' <<
-    CONST_STRING << '\s+' \
-    'invoke-virtual \{[vp]\d+, [vp]\d+\}, Ljava\/lang\/Class;->getField\(Ljava\/lang\/String;\)Ljava\/lang\/reflect\/Field;\s+' <<
-    MOVE_RESULT_OBJECT << '\s+' \
-    'invoke-virtual \{[vp]\d+, ([vp]\d+)\}, Ljava\/lang\/reflect\/Field;->get\(Ljava\/lang\/Object;\)Ljava\/lang\/Object;\s+' <<
-    MOVE_RESULT_OBJECT << ')'
+    '^[ \t]*(' +
+    CONST_STRING + '\s+' \
+    'invoke-static \{[vp]\d+\}, Ljava\/lang\/Class;->forName\(Ljava\/lang\/String;\)Ljava\/lang\/Class;\s+' +
+    MOVE_RESULT_OBJECT + '\s+' +
+    CONST_STRING + '\s+' \
+    'invoke-virtual \{[vp]\d+, [vp]\d+\}, Ljava\/lang\/Class;->getField\(Ljava\/lang\/String;\)Ljava\/lang\/reflect\/Field;\s+' +
+    MOVE_RESULT_OBJECT + '\s+' \
+    'invoke-virtual \{[vp]\d+, ([vp]\d+)\}, Ljava\/lang\/reflect\/Field;->get\(Ljava\/lang\/Object;\)Ljava\/lang\/Object;\s+' +
+    MOVE_RESULT_OBJECT + ')'
   )
 
   STATIC_FIELD_LOOKUP = Regexp.new(
-    '^[ \t]*(' <<
-    CONST_STRING << '\s+' <<
-    CLASS_FOR_NAME << '\s+' <<
-    MOVE_RESULT_OBJECT << '\s+' <<
-    CONST_STRING <<
-    'invoke-virtual \{[vp]\d+, [vp]\d+\}, Ljava\/lang\/Class;->getField\(Ljava\/lang\/String;\)Ljava\/lang\/reflect\/Field;\s+' <<
-    MOVE_RESULT_OBJECT << '\s+' \
+    '^[ \t]*(' +
+    CONST_STRING + '\s+' +
+    CLASS_FOR_NAME + '\s+' +
+    MOVE_RESULT_OBJECT + '\s+' +
+    CONST_STRING +
+    'invoke-virtual \{[vp]\d+, [vp]\d+\}, Ljava\/lang\/Class;->getField\(Ljava\/lang\/String;\)Ljava\/lang\/reflect\/Field;\s+' +
+    MOVE_RESULT_OBJECT + '\s+' \
     'const/4 [vp]\d+, 0x0\s+' \
-    'invoke-virtual \{[vp]\d+, ([vp]\d+)\}, Ljava\/lang\/reflect\/Field;->get\(Ljava\/lang\/Object;\)Ljava\/lang\/Object;\s+' <<
-    MOVE_RESULT_OBJECT <<
+    'invoke-virtual \{[vp]\d+, ([vp]\d+)\}, Ljava\/lang\/reflect\/Field;->get\(Ljava\/lang\/Object;\)Ljava\/lang\/Object;\s+' +
+    MOVE_RESULT_OBJECT +
     ')'
   )
 
-  CLASS_LOOKUP_MODIFIER = -> (_, output, out_reg) { "const-class #{out_reg}, #{output}" }
+  CLASS_LOOKUP_MODIFIER = -> (_, output, out_reg) {
+    "const-class #{out_reg}, #{output}"
+  }
 
   def initialize(driver, smali_files, methods)
     @driver = driver
@@ -58,10 +60,6 @@ class Unreflector < Plugin
     end
 
     made_changes
-  end
-
-  def optimizations
-    @optimizations
   end
 
   private
