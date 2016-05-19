@@ -3,11 +3,11 @@ rvm:
   - 2.2
 before_script:
   - mkdir bin-test && cd bin-test
-  - curl -O https://bitbucket.org/JesusFreke/smali/downloads/smali-2.1.2.jar
-  - curl -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.1.2.jar
-  - curl -O https://bitbucket.org/JesusFreke/smali/downloads/smali
-  - curl -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali
-  - echo `ls`
+  - curl -v -O https://bitbucket.org/JesusFreke/smali/downloads/smali-2.1.2.jar
+  - curl -v -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.1.2.jar
+  - curl -v -O https://bitbucket.org/JesusFreke/smali/downloads/smali
+  - curl -v -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali
+  - ls && pwd && ls ..
   - chmod +x ./smali ./baksmali
   - baksmali -h
   - export PATH=$PATH:$PWD
