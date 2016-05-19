@@ -8,7 +8,7 @@ before_script:
   - curl -O https://bitbucket.org/JesusFreke/smali/downloads/smali
   - curl -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali
   - ls
-  - chmod +x smali baksmali
+  - chmod 755 smali baksmali
   - baksmali -h
   - export PATH=$PATH:$PWD
   - cd ..
