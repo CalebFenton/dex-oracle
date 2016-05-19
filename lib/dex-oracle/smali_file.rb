@@ -46,11 +46,31 @@ class SmaliFile
     @content.scan(INTERFACE).each { |m| @interfaces << m.first }
     @fields = []
     @content.scan(FIELD).each { |m| @fields << SmaliField.new(@class, m.first) }
+    parse_methods
+  end
+
+  def parse_methods
     @methods = []
-    @content.scan(METHOD).each do |m|
-      body_regex = build_method_regex(m.first)
-      body = @content[body_regex, 1]
-      @methods << SmaliMethod.new(@class, m.first, body)
+    method_signature = nil
+    in_method = false
+    body = nil
+    @content.each_line do |line|
+      if in_method
+        if /^\.end method/.match(line)
+          in_method = false
+          @methods << SmaliMethod.new(@class, method_signature, body)
+          next
+        end
+        body << line
+      else
+        next unless line.include?('.method ')
+        m = METHOD.match(line)
+        next unless m
+
+        in_method = true
+        method_signature = m.captures.first
+        body = "\n"
+      end
     end
   end
 

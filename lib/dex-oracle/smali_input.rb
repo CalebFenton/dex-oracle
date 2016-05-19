@@ -5,8 +5,10 @@ require_relative 'utility'
 class SmaliInput
   attr_reader :dir, :out_apk, :out_dex, :temp_dir, :temp_dex
 
-  DEX_MAGIC = [0x64, 0x65, 0x78]
-  PK_ZIP_MAGIC = [0x50, 0x4b, 0x3]
+  include Logging
+
+  DEX_MAGIC = [0x64, 0x65, 0x78].freeze
+  PK_ZIP_MAGIC = [0x50, 0x4b, 0x3].freeze
 
   def initialize(input)
     prepare(input)
@@ -14,7 +16,7 @@ class SmaliInput
 
   def finish
     SmaliInput.update_apk(dir, @out_apk) if @out_apk
-    SmaliInput.compile(dir, @out_dex) if @out_dex
+    SmaliInput.compile(dir, @out_dex) if @out_dex && !@out_apk
     FileUtils.rm_rf(@dir) if @temp_dir
     FileUtils.rm_rf(@out_dex) if @temp_dex
   end
@@ -23,7 +25,8 @@ class SmaliInput
 
   def self.compile(dir, out_dex = nil)
     fail 'Smali could not be found on the path.' if Utility.which('smali').nil?
-    out_dex = Tempfile.new(['oracle', '.dex']) if out_dex.nil?
+    out_dex = Tempfile.new(%w(oracle .dex)) if out_dex.nil?
+    logger.info("Compiling DEX #{out_dex.path} ...")
     exit_code = SmaliInput.exec("smali #{dir} -o #{out_dex.path}")
     # Remember kids, if you make a CLI, exit with non-zero status for failures
     fail 'Crap, smali compilation failed.' if $CHILD_STATUS.exitstatus != 0
