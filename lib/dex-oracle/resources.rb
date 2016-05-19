@@ -1,3 +1,5 @@
+require_relative 'logging'
+
 class Resources
   include Logging
 
