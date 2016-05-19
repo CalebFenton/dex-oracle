@@ -8,4 +8,5 @@ before_script:
   - curl -O https://bitbucket.org/JesusFreke/smali/downloads/smali
   - curl -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali
   - export PATH=$PATH:$PWD
+  - cd ..
 script: bundle exec rspec
