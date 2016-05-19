@@ -1,6 +1,9 @@
 # Oracle
 A pattern based Dalvik deobfuscator which uses limited execution to improve semantic analysis. Also, the inspiration for another Android deobfuscator: [Simplify](https://github.com/CalebFenton/simplify).
+
 [![Gem Version](https://badge.fury.io/rb/dex-oracle.svg)](https://badge.fury.io/rb/dex-oracle)
+[![Code Climate](https://codeclimate.com/github/CalebFenton/dex-oracle/badges/gpa.svg)](https://codeclimate.com/github/CalebFenton/dex-oracle)
+[![Test Coverage](https://codeclimate.com/github/CalebFenton/dex-oracle/badges/coverage.svg)](https://codeclimate.com/github/CalebFenton/dex-oracle/coverage)
 
 **Before**
 ![before](http://i.imgur.com/nICE4N4.png)

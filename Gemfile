@@ -1,4 +1,7 @@
 source 'https://rubygems.org'
 gemspec name: 'dex-oracle'
 
-gem 'rubocop', require: false
+group :development, :test do
+  gem 'rubocop', require: false
+  gem 'codeclimate-test-reporter', require: nil
+end
