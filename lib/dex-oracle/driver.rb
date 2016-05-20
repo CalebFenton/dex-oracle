@@ -12,8 +12,8 @@ class Driver
   UNESCAPES = {
     'a' => "\x07", 'b' => "\x08", 't' => "\x09",
     'n' => "\x0a", 'v' => "\x0b", 'f' => "\x0c",
-    'r' => "\x0d", 'e' => "\x1b", '\\' => "\x5c",
-    '"' => "\x22", "'" => "\x27"
+    'r' => "\x0d", 'e' => "\x1b", '\\' => '\\',
+    '"' => '"', "'" => "'"
   }.freeze
   UNESCAPE_REGEX = /\\(?:([#{UNESCAPES.keys.join}])|u([\da-fA-F]{4}))|\\0?x([\da-fA-F]{2})/
 
@@ -33,7 +33,8 @@ class Driver
   end
 
   def install(dex)
-    raise 'Unable to find Java on the path.' unless Utility.which('java')
+    has_java = Utility.which('java')
+    raise 'Unable to find Java on the path.' unless has_java
 
     begin
       # Merge driver and target dex file
@@ -220,7 +221,11 @@ class Driver
   def unescape(str)
     str.gsub(UNESCAPE_REGEX) do
       if Regexp.last_match[1]
-        Regexp.last_match[1] == '\\' ? Regexp.last_match[1] : UNESCAPES[Regexp.last_match[1]]
+        if Regexp.last_match[1] == '\\'
+          Regexp.last_match[1]
+        else
+          UNESCAPES[Regexp.last_match[1]]
+        end
       elsif Regexp.last_match[2] # escape \u0000 unicode
         [Regexp.last_match[2].hex].pack('U*')
       elsif Regexp.last_match[3] # escape \0xff or \xff
