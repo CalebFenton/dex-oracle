@@ -13,9 +13,7 @@ class StringDecryptor < Plugin
     '\s+' + MOVE_RESULT_OBJECT + ')'
   )
 
-  MODIFIER = -> (_, output, out_reg) {
-    "const-string #{out_reg}, \"#{output.split('').collect { |e| e.inspect[1..-2] }.join}\""
-  }
+  MODIFIER = -> (_, output, out_reg) { "const-string #{out_reg}, \"#{output.split('').collect { |e| e.inspect[1..-2] }.join}\"" }
 
   def initialize(driver, smali_files, methods)
     @driver = driver

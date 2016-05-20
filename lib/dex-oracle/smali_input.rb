@@ -21,15 +21,13 @@ class SmaliInput
     FileUtils.rm_rf(@out_dex) if @temp_dex
   end
 
-  private
-
   def self.compile(dir, out_dex = nil)
-    fail 'Smali could not be found on the path.' if Utility.which('smali').nil?
+    raise 'Smali could not be found on the path.' if Utility.which('smali').nil?
     out_dex = Tempfile.new(%w(oracle .dex)) if out_dex.nil?
     logger.info("Compiling DEX #{out_dex.path} ...")
     exit_code = SmaliInput.exec("smali #{dir} -o #{out_dex.path}")
     # Remember kids, if you make a CLI, exit with non-zero status for failures
-    fail 'Crap, smali compilation failed.' if $CHILD_STATUS.exitstatus != 0
+    raise 'Crap, smali compilation failed.' if $CHILD_STATUS.exitstatus != 0
     out_dex
   end
 
@@ -40,6 +38,19 @@ class SmaliInput
 
   def self.extract_dex(apk, out_dex)
     Utility.extract_file(apk, 'classes.dex', out_dex)
+  end
+
+  def self.exec(cmd)
+    `#{cmd}`
+  end
+
+  private
+
+  def baksmali(input)
+    raise 'Baksmali could not be found on the path.' if Utility.which('baksmali').nil?
+    @dir = Dir.mktmpdir
+    cmd = "baksmali #{input} -o #{@dir}"
+    SmaliInput.exec(cmd)
   end
 
   def prepare(input)
@@ -67,18 +78,7 @@ class SmaliInput
       @out_dex = "#{File.basename(input, '.*')}_oracle#{File.extname(input)}"
       baksmali(input)
     else
-      fail "Unrecognized file type for: #{input}, magic=#{magic.inspect}"
+      raise "Unrecognized file type for: #{input}, magic=#{magic.inspect}"
     end
-  end
-
-  def baksmali(input)
-    fail 'Baksmali could not be found on the path.' if Utility.which('baksmali').nil?
-    @dir = Dir.mktmpdir
-    cmd = "baksmali #{input} -o #{@dir}"
-    SmaliInput.exec(cmd)
-  end
-
-  def self.exec(cmd)
-    `#{cmd}`
   end
 end

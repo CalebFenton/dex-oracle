@@ -41,9 +41,7 @@ class Unreflector < Plugin
     ')'
   )
 
-  CLASS_LOOKUP_MODIFIER = -> (_, output, out_reg) {
-    "const-class #{out_reg}, #{output}"
-  }
+  CLASS_LOOKUP_MODIFIER = -> (_, output, out_reg) { "const-class #{out_reg}, #{output}" }
 
   def initialize(driver, smali_files, methods)
     @driver = driver

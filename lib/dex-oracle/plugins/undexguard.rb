@@ -42,9 +42,7 @@ class Undexguard < Plugin
     ')'
   )
 
-  MODIFIER = -> (_, output, out_reg) {
-    "const-string #{out_reg}, \"#{output.split('').collect { |e| e.inspect[1..-2] }.join}\""
-  }
+  MODIFIER = -> (_, output, out_reg) { "const-string #{out_reg}, \"#{output.split('').collect { |e| e.inspect[1..-2] }.join}\"" }
 
   def initialize(driver, smali_files, methods)
     @driver = driver
@@ -148,7 +146,7 @@ class Undexguard < Plugin
     if str =~ /\A\[(?:\d+(?:,\d+)*)?\]\z/
       str = eval(str)
     else
-      fail "Output is not in byte format; this frightens me: #{str}"
+      raise "Output is not in byte format; this frightens me: #{str}"
     end
     str
   end

@@ -29,11 +29,11 @@ class Plugin
   end
 
   def process
-    fail 'process not implemented'
+    raise 'process not implemented'
   end
 
   def optimizations
-    fail 'optimizations not implemented'
+    raise 'optimizations not implemented'
   end
 
   # method_to_target_to_context -> { method: [target_to_context] }

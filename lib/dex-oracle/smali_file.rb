@@ -56,7 +56,7 @@ class SmaliFile
     body = nil
     @content.each_line do |line|
       if in_method
-        if /^\.end method/.match(line)
+        if /^\.end method/ =~ line
           in_method = false
           @methods << SmaliMethod.new(@class, method_signature, body)
           next

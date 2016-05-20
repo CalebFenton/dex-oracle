@@ -14,34 +14,19 @@ engines:
     enabled: true
     checks:
       Metrics/LineLength:
-        Enabled: false
-
-      Metrics/MethodLength:
-        CountComments: false
-        Max: 30
-
+        enabled: false
       Style/IndentationWidth:
-        Enabled: false
-
+        enabled: false
       Style/LeadingCommentSpace:
-        Enabled: false
-
+        enabled: false
       Style/DoubleNegation:
-        Enabled: false
-
+        enabled: false
       Style/TrailingComma:
-        Enabled: false
-
+        enabled: false
       Documentation:
-        Enabled: false
+        enabled: false
 ratings:
   paths:
-  - "**.inc"
-  - "**.js"
-  - "**.jsx"
-  - "**.module"
-  - "**.php"
-  - "**.py"
   - "**.rb"
 exclude_paths:
 - spec/
