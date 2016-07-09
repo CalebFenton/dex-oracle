@@ -47,6 +47,7 @@ class SmaliInput
   private
 
   def baksmali(input)
+    logger.debug("Disassembling #{input} ...")
     raise 'Baksmali could not be found on the path.' if Utility.which('baksmali').nil?
     @dir = Dir.mktmpdir
     cmd = "baksmali #{input} -o #{@dir}"

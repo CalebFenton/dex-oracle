@@ -42,17 +42,22 @@ class Driver
       logger.debug("Merging #{dex.path} and driver dex ...")
       raise "#{Resources.dx} does not exist and is required for DexMerger" unless File.exist?(Resources.dx)
       raise "#{Resources.driver_dex} does not exist" unless File.exist?(Resources.driver_dex)
-      tf = Tempfile.new(['oracle-driver', '.dex'])
+      tf = Tempfile.new(%w(oracle-driver .dex))
       cmd = "java -cp #{Resources.dx} com.android.dx.merge.DexMerger #{tf.path} #{dex.path} #{Resources.driver_dex}"
       exec(cmd.to_s)
+      tf.close
 
       # Zip merged dex and push to device
       logger.debug('Pushing merged driver to device ...')
       tz = Tempfile.new(%w(oracle-driver .zip))
-      Utility.create_zip(tz.path, 'classes.dex' => tf)
+      # Could pass tz to create_zip, but Windows doesn't let you rename if file open
+      # And zip internally renames files when creating them
+      tempzip_path = tz.path
+      tz.close
+      Utility.create_zip(tempzip_path, 'classes.dex' => tf)
       adb("push #{tz.path} #{DRIVER_DIR}/od.zip")
     rescue => e
-      puts "Error installing the driver: #{e}"
+      puts "Error installing driver: #{e}\n#{e.backtrace.join("\n\t")}"
     ensure
       tf.close if tf
       tf.unlink if tf
