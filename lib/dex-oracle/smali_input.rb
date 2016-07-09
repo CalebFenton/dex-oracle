@@ -69,7 +69,7 @@ class SmaliInput
       @temp_dex = true
       @temp_dir = true
       @out_apk = "#{File.basename(input, '.*')}_oracle#{File.extname(input)}"
-      @out_dex = Tempfile.new(['oracle', '.dex'])
+      @out_dex = Tempfile.new(%w(oracle .dex))
       FileUtils.cp(input, @out_apk)
       SmaliInput.extract_dex(@out_apk, @out_dex)
       baksmali(input)
