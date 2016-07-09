@@ -53,9 +53,25 @@ class Oracle
     methods
   end
 
+  def self.enumerate_files(dir, ext)
+    # On Windows, filenames with unicode characters do not show up with Dir#glob or Dir#[]
+    # They do, however, show up with Dir.entries, which is fine because it seems to be
+    # the only Dir method that let's me set UTF-8 encoding. I must be missing something.
+    # OH WELL. Do it the hard way.
+    opts = { encoding: 'UTF-8' }
+    Dir.entries(dir, opts).collect do |entry|
+      next if entry == '.' or entry == '..'
+      full_path = "#{dir}/#{entry}"
+      if File.directory?(full_path)
+        Oracle.enumerate_files(full_path, ext)
+      else
+        full_path if entry.downcase.end_with?(ext)
+      end
+    end.flatten.compact
+  end
+
   def self.parse_smali(smali_dir)
-    smali_files = []
-    Dir["#{smali_dir}/**/*.smali"].each { |f| smali_files << SmaliFile.new(f) }
-    smali_files
+    file_paths = Oracle.enumerate_files(smali_dir, '.smali')
+    smali_files = file_paths.collect { |path| SmaliFile.new(path) }
   end
 end
