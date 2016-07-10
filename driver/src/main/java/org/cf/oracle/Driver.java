@@ -20,7 +20,6 @@ import com.google.gson.GsonBuilder;
 public class Driver {
 
     private static final String DRIVER_DIR = "/data/local";
-
     private static final String OUTPUT_HEADER = "===ORACLE DRIVER OUTPUT===\n";
     private static final String EXCEPTION_LOG = DRIVER_DIR + "/od-exception.txt";
     private static final String OUTPUT_FILE = DRIVER_DIR + "/od-output.json";
@@ -66,8 +65,8 @@ public class Driver {
     }
 
     private static void showUsage() {
-        System.out.println("Usage: export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.driver.OracleDriver <class> <method> [<parameter type>:<parameter value json>]");
-        System.out.println("       export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.driver.OracleDriver @<json file>");
+        System.out.println("Usage: export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.driver.Driver <class> <method> [<parameter type>:<parameter value json>]");
+        System.out.println("       export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.driver.Driver @<json file>");
     }
 
     public static void main(String[] args) {

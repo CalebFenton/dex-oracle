@@ -1,19 +1,28 @@
 require 'spec_helper'
+require 'fakefs/spec_helpers'
 
 describe SmaliInput do
+  include FakeFS::SpecHelpers
+
   let(:data_path) { 'spec/data' }
   let(:temp_dir) { '/fake/tmp/dir' }
   let(:temp_file) { '/fake/tmp/file' }
 
+  before(:each) do
+    FakeFS::FileSystem.clone('spec/data', 'spec/data')
+  end
+
+  after(:all) do
+  end
   context 'for input that must be disassembled with baksmali' do
     let(:smali_input) do
       allow(Dir).to receive(:mktmpdir).and_return(temp_dir)
       allow(Tempfile).to receive(:new).and_return(temp_file)
-      allow(SmaliInput).to receive(:which).and_return('baksmali')
+      allow(Utility).to receive(:which).and_return('baksmali')
       allow(SmaliInput).to receive(:exec)
+      allow(SmaliInput).to receive(:baksmali)
       allow(SmaliInput).to receive(:update_apk)
       allow(SmaliInput).to receive(:extract_dex)
-      allow(FileUtils).to receive(:cp)
       SmaliInput.new(file_path)
     end
 
@@ -31,7 +40,7 @@ describe SmaliInput do
     context 'with a dex' do
       let(:file_path) { "#{data_path}/helloworld.dex" }
       its(:out_apk) { should be nil }
-      its(:out_dex) { should eq 'helloworld_oracle.dex' }
+      its('out_dex.path') { should eq 'helloworld_oracle.dex' }
       its(:dir) { should eq temp_dir }
       its(:temp_dir) { should be true }
       its(:temp_dex) { should be false }

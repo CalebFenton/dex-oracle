@@ -77,6 +77,8 @@ class SmaliInput
       @temp_dex = false
       @temp_dir = true
       @out_dex = "#{File.basename(input, '.*')}_oracle#{File.extname(input)}"
+      FileUtils.cp(input, @out_dex)
+      @out_dex = File.new(@out_dex)
       baksmali(input)
     else
       raise "Unrecognized file type for: #{input}, magic=#{magic.inspect}"

@@ -18,7 +18,6 @@ class Driver
   UNESCAPE_REGEX = /\\(?:([#{UNESCAPES.keys.join}])|u([\da-fA-F]{4}))|\\0?x([\da-fA-F]{2})/
 
   OUTPUT_HEADER = '===ORACLE DRIVER OUTPUT==='.freeze
-  DRIVER_DIR = '/data/local'.freeze
   DRIVER_CLASS = 'org.cf.oracle.Driver'.freeze
 
   def initialize(device_id, timeout = 60)
@@ -27,7 +26,13 @@ class Driver
 
     device_str = device_id.empty? ? '' : "-s #{@device_id} "
     @adb_base = "adb #{device_str}%s"
-    @cmd_stub = "export CLASSPATH=#{DRIVER_DIR}/od.zip; app_process /system/bin #{DRIVER_CLASS}"
+    @driver_dir = get_driver_dir
+    unless @driver_dir
+      logger.error 'Unable to find writable driver directory. Make sure /data/local or /data/local/tmp exists and is writable.'
+      exit -1
+    end
+    logger.debug "Using #{@driver_dir} as driver directory ..."
+    @cmd_stub = "export CLASSPATH=#{@driver_dir}/od.zip; app_process /system/bin #{DRIVER_CLASS}"
 
     @cache = {}
   end
@@ -39,12 +44,25 @@ class Driver
     begin
       # Merge driver and target dex file
       # Congratulations. You're now one of the 5 people who've used this tool explicitly.
-      logger.debug("Merging #{dex.path} and driver dex ...")
       raise "#{Resources.dx} does not exist and is required for DexMerger" unless File.exist?(Resources.dx)
       raise "#{Resources.driver_dex} does not exist" unless File.exist?(Resources.driver_dex)
+      logger.debug("Merging input DEX (#{dex.path}) and driver DEX (#{Resources.driver_dex}) ...")
       tf = Tempfile.new(%w(oracle-driver .dex))
       cmd = "java -cp #{Resources.dx} com.android.dx.merge.DexMerger #{tf.path} #{dex.path} #{Resources.driver_dex}"
-      exec(cmd.to_s)
+      stdout, stderr = exec(cmd)
+      # Ideally, it says something like this:
+      # Merged dex #1 (36 defs/87.9KiB)
+      # Merged dex #2 (1225 defs/1092.7KiB)
+      # Result is 1261 defs/1375.0KiB. Took 0.2s
+      # But it might say this:
+      # Exception in thread "main" com.android.dex.DexIndexOverflowException: Cannot merge new index 65776 into a non-jumbo instruction!
+      if stderr.start_with?('Exception in thread "main"')
+        logger.error("Failure to merge input DEX and driver DEX:\n#{stderr}")
+        if stderr.include?('DexIndexOverflowException')
+          logger.error("Your input DEX inexplicably contains const-string and const-string/jumbo. This probably means someone fucked with it. In any case, it means DexMerge is failing because there are too many strings.\nTry this: baksmali the DEX, replace all const-string instructions with const-string/jumbo, then recompile with smali and use that DEX as input. Sorry, I don't want to do this for you. It's too complicated.")
+        end
+        exit -1
+      end
       tf.close
 
       # Zip merged dex and push to device
@@ -55,7 +73,7 @@ class Driver
       tempzip_path = tz.path
       tz.close
       Utility.create_zip(tempzip_path, 'classes.dex' => tf)
-      adb("push #{tz.path} #{DRIVER_DIR}/od.zip")
+      adb("push #{tz.path} #{@driver_dir}/od.zip")
     rescue => e
       puts "Error installing driver: #{e}\n#{e.backtrace.join("\n\t")}"
     ensure
@@ -92,7 +110,7 @@ class Driver
     push_batch_targets(batch)
     retries = 1
     begin
-      drive("#{@cmd_stub} @#{DRIVER_DIR}/od-targets.json", true)
+      drive("#{@cmd_stub} @#{@driver_dir}/od-targets.json", true)
     rescue => e
       raise e if retries > 3 || !e.message.include?('Segmentation fault')
 
@@ -125,16 +143,29 @@ class Driver
     target_file << batch.to_json
     target_file.flush
     logger.info("Pushing #{batch.size} method targets to device ...")
-    adb("push #{target_file.path} #{DRIVER_DIR}/od-targets.json")
+    adb("push #{target_file.path} #{@driver_dir}/od-targets.json")
     target_file.close
     target_file.unlink
+  end
+
+  def get_driver_dir
+    # On some older devices, /data/local is world writable
+    # But on other devices, it's /data/local/tmp
+    %w(/data/local /data/local/tmp).each do |dir|
+      stdout = adb("shell -x ls #{dir}")
+      next if stdout == "ls: #{dir}: Permission denied"
+      next if stdout == "ls: #{dir}: No such file or directory"
+      return dir
+    end
+
+    nil
   end
 
   def pull_batch_outputs
     output_file = Tempfile.new(['oracle-output', '.json'])
     logger.debug('Pulling batch results from device ...')
-    adb("pull #{DRIVER_DIR}/od-output.json #{output_file.path}")
-    adb("shell rm #{DRIVER_DIR}/od-output.json")
+    adb("pull #{@driver_dir}/od-output.json #{output_file.path}")
+    adb("shell rm #{@driver_dir}/od-output.json")
     outputs = JSON.parse(File.read(output_file.path))
     outputs.each { |_, (_, v2)| v2.gsub!(/(?:^"|"$)/, '') if v2.start_with?('"') }
     logger.debug("Pulled #{outputs.size} outputs.")
@@ -149,10 +180,10 @@ class Driver
     retries = 1
     begin
       status = Timeout.timeout(@timeout) do
-        if !silent
-          `#{cmd}`
+        if silent
+          Open3.popen3(cmd) { |_, stdout, stderr, _| [stdout.read, stderr.read] }
         else
-          Open3.popen3(cmd) { |_, stdout, _, _| stdout.read }
+          [`#{cmd}`, '']
         end
       end
     rescue => e
@@ -193,9 +224,9 @@ class Driver
     # The driver writes any actual exceptions to the filesystem
     # Need to check to make sure the output value is legitimate
     logger.debug('Checking if execution had any exceptions ...')
-    exception = adb("shell cat #{DRIVER_DIR}/od-exception.txt").strip
+    exception = adb("shell cat #{@driver_dir}/od-exception.txt").strip
     unless exception.end_with?('No such file or directory')
-      adb("shell rm #{DRIVER_DIR}/od-exception.txt")
+      adb("shell rm #{@driver_dir}/od-exception.txt")
       raise exception
     end
     logger.debug('No exceptions found :)')
@@ -208,8 +239,13 @@ class Driver
   end
 
   def adb(cmd)
+    adb_with_stderr(cmd)[0]
+  end
+
+  def adb_with_stderr(cmd)
     full_cmd = @adb_base % cmd
-    exec(full_cmd, false).rstrip
+    stdout, stderr = exec(full_cmd, false)
+    [stdout.rstrip, stderr.rstrip]
   end
 
   def build_command(class_name, method_name, parameters, args)

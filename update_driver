@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
 cd driver
+
+echo "[*] Building driver ..."
 ./gradlew clean fatjar
-dx --dex --output=../res/driver.dex build/libs/driver.jar
+
+echo "[*] Updating driver stub ..."
+dx --dex --force-jumbo --output=../res/driver.dex build/libs/driver.jar
+
+echo "[*] Done."
