@@ -26,7 +26,7 @@ class Driver
 
     device_str = device_id.empty? ? '' : "-s #{@device_id} "
     @adb_base = "adb #{device_str}%s"
-    @driver_dir = get_driver_dir
+    @driver_dir = Driver.get_driver_dir
     unless @driver_dir
       logger.error 'Unable to find writable driver directory. Make sure /data/local or /data/local/tmp exists and is writable.'
       exit -1
@@ -148,7 +148,7 @@ class Driver
     target_file.unlink
   end
 
-  def get_driver_dir
+  def self.get_driver_dir
     # On some older devices, /data/local is world writable
     # But on other devices, it's /data/local/tmp
     %w(/data/local /data/local/tmp).each do |dir|

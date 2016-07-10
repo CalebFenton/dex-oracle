@@ -17,6 +17,7 @@ describe Driver do
     allow(File).to receive(:open).and_yield(temp_file)
     allow(File).to receive(:read)
     allow(JSON).to receive(:parse)
+    allow(Driver).to receive(:get_driver_dir).and_return('/data/local')
     Driver.new(device_id)
   end
   let(:driver_stub) { 'export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.oracle.Driver' }
