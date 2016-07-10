@@ -1,6 +1,6 @@
 language: ruby
 rvm:
-  - 2.2
+  - 2.3
 before_script:
   - mkdir bin-test && cd bin-test
   - curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/smali-2.1.2.jar && mv smali-*.jar smali.jar
