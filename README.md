@@ -124,6 +124,14 @@ First, ensure `dx` is on your path. This is part of the Android SDK, but it's pr
 
 The [driver](driver) folder is a Java project managed by Gradle. Import it into Eclipse, IntelliJ, etc. and make any changes you like. To finish updating the driver, run `./update_driver`. This will rebuild the driver and convert the output JAR into a DEX.
 
+### Troubleshooting
+
+If there's a problem executing driver code on your emulator or device, be sure to open `monitor` (part of the Android SDK) and check for any clues there. Even if the error doesn't make sense to you, it'll help if you post it along with the issue you'll create.
+
+Not all Android platforms work well with dex-oracle. Some of them just crap out when trying to execute arbitrary DEX files. If you're having trouble with Segfaults or driver crashes, try using Android 4.4.2 API level 19 with ARM.
+
+It's possible that a plugin sees a pattern it thinks is obfuscation but is actually some code it shouldn't execute. This seems unlikely because the obfuscation patterns are really unusual, but it is possible. If you're finding a particular plugin is causing problems and you're sure the app isn't protected by that particular obfuscator, i.e. the app is not DexGuarded but the DexGuard plugin is trying to execute stuff, just disable it.
+
 ## More Information
 
-[TetCon 2016 Android Deobfuscation Presentation](http://www.slideshare.net/tekproxy/tetcon-2016)
+1. [TetCon 2016 Android Deobfuscation Presentation](http://www.slideshare.net/tekproxy/tetcon-2016)
