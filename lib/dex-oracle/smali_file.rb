@@ -39,8 +39,8 @@ class SmaliFile
   private
 
   def parse(file_path)
-    logger.debug("Parsing Smali file: #{file_path} ...")
-    @content = IO.read(file_path)
+    logger.debug("Parsing: #{file_path} ...")
+    @content = File.open(file_path, 'r:UTF-8', &:read)
     @class = @content[CLASS, 1]
     @super = @content[SUPER, 1]
     @interfaces = []
@@ -76,7 +76,7 @@ class SmaliFile
   end
 
   def build_method_regex(method_signature)
-    /\.method (?:#{ACCESSOR} )+#{Regexp.escape(method_signature)}(.+?)^\.end method$/m
+    /^\.method (?:#{ACCESSOR} )+#{Regexp.escape(method_signature)}(.+?)^\.end method$/m
   end
 
   def update_method(method)
