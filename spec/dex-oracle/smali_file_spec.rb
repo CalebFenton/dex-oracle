@@ -29,10 +29,11 @@ describe SmaliFile do
     describe '#update' do
       subject { smali_file.content }
       it 'should update modified methods' do
-        allow(File).to receive(:open)
         method = smali_file.methods.first
         method.modified = true
         method.body = "\nreturn-void\n"
+        # Make sure we don't save it
+        allow(File).to receive(:open)
         smali_file.update
         should eq ".class public LHelloWorld; # COMMENT;\n.super Ljava/lang/Object; # YEAH ;\n.implements Lsome/Interface1;\n.implements Lsome/Interface2;\n\n.field public static final someField:Z\n\n.method public static main([Ljava/lang/String;)V\nreturn-void\n.end method\n\n"
       end
