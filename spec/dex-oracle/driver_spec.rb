@@ -17,7 +17,7 @@ describe Driver do
     allow(File).to receive(:open).and_yield(temp_file)
     allow(File).to receive(:read)
     allow(JSON).to receive(:parse)
-    allow(Driver).to receive(:get_driver_dir).and_return('/data/local')
+    allow_any_instance_of(Driver).to receive(:get_driver_dir).and_return('/data/local')
     Driver.new(device_id)
   end
   let(:driver_stub) { 'export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.oracle.Driver' }
@@ -54,7 +54,6 @@ describe Driver do
       context 'with integer arguments' do
         subject { driver.run(class_name, method_signature, *args) }
         it do
-          allow(driver).to receive(:drive)
           expect(driver).to receive(:drive).with("#{driver_stub} 'some.Klazz' 'run' I:1 I:2 I:3")
           subject
         end
@@ -71,7 +70,6 @@ describe Driver do
 
         subject { driver.run(class_name, method_signature, args) }
         it do
-          allow(driver).to receive(:drive)
           expect(driver).to receive(:drive).with(
             "#{driver_stub} 'string.Klazz' 'run' java.lang.String:[104,101,108,108,111,32,115,116,114,105,110,103]"
           )
