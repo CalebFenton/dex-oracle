@@ -2,7 +2,7 @@ class Plugin
   module CommonRegex
     CONST_NUMBER = 'const(?:\/\d+) [vp]\d+, (-?0x[a-f\d]+)'.freeze
     ESCAPE_STRING = '"(.*?)(?<!\\\\)"'.freeze
-    CONST_STRING = 'const-string [vp]\d+, ' << ESCAPE_STRING << '.*'.freeze
+    CONST_STRING = 'const-string(?:/jumbo)? [vp]\d+, ' << ESCAPE_STRING << '.*'.freeze
     MOVE_RESULT_OBJECT = 'move-result-object ([vp]\d+)'.freeze
   end
 
@@ -16,7 +16,7 @@ class Plugin
     Dir["#{File.dirname(__FILE__)}/plugins/*.rb"].each { |f| require f }
     classes = []
     Object.constants.each do |klass|
-      const = Kernel.const_get(klass)
+      const = Kernel.const_get(klass) unless klass == :TimeoutError
       next unless const.respond_to?(:superclass) && const.superclass == Plugin
       classes << const
     end

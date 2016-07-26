@@ -10,7 +10,8 @@ class Unreflector < Plugin
   CLASS_FOR_NAME = 'invoke-static \{[vp]\d+\}, Ljava\/lang\/Class;->forName\(Ljava\/lang\/String;\)Ljava\/lang\/Class;'.freeze
 
   CONST_CLASS_REGEX = Regexp.new(
-    '^[ \t]*(' + CONST_STRING + '\s+' +
+    '^[ \t]*(' +
+    CONST_STRING + '\s+' +
     CLASS_FOR_NAME + '\s+' +
     MOVE_RESULT_OBJECT + ')'
   )

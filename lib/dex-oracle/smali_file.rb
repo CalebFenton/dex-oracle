@@ -1,3 +1,4 @@
+# encoding: utf-8
 require_relative 'smali_field'
 require_relative 'smali_method'
 require_relative 'logging'
@@ -75,7 +76,7 @@ class SmaliFile
   end
 
   def build_method_regex(method_signature)
-    /\.method (?:#{ACCESSOR} )+#{Regexp.escape(method_signature)}(.*)^\.end method/m
+    /\.method (?:#{ACCESSOR} )+#{Regexp.escape(method_signature)}(.+?)^\.end method$/m
   end
 
   def update_method(method)

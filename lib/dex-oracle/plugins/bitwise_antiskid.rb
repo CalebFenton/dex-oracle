@@ -1,7 +1,8 @@
 require_relative '../logging'
 require_relative '../utility'
 
-class StringDecryptor < Plugin
+# Sample: 0e18bbf2a3539e5669be76ed4c468257ecfd3d36
+class BitwiseAntiSkid < Plugin
   attr_reader :optimizations
 
   include Logging
@@ -9,9 +10,10 @@ class StringDecryptor < Plugin
 
   STRING_DECRYPT = Regexp.new(
     '^[ \t]*(' +
-    CONST_STRING + '\s+' \
-    'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(Ljava/lang/String;\))Ljava/lang/String;' \
-    '\s+' +
+    CONST_STRING + '\s+' + \
+    CONST_NUMBER + '\s+' \
+    'invoke-static \{[vp]\d+, [vp]\d+\}, L([^;]+);->(Go_Learn_Something\(Ljava/lang/String;I\))Ljava/lang/String;' \
+    '\s+' + \
     MOVE_RESULT_OBJECT + ')'
   )
 
@@ -27,7 +29,7 @@ class StringDecryptor < Plugin
   def process
     method_to_target_to_contexts = {}
     @methods.each do |method|
-      logger.info("Decrypting strings #{method.descriptor}")
+      logger.info("Decrypting Bitwise Anti-Skid #{method.descriptor}")
       target_to_contexts = {}
       target_to_contexts.merge!(decrypt_strings(method))
       target_to_contexts.map { |_, v| v.uniq! }
@@ -46,9 +48,9 @@ class StringDecryptor < Plugin
     target_to_contexts = {}
     matches = method.body.scan(STRING_DECRYPT)
     @optimizations[:string_decrypts] += matches.size if matches
-    matches.each do |original, encrypted, class_name, method_signature, out_reg|
+    matches.each do |original, encrypted, number, class_name, method_signature, out_reg|
       target = @driver.make_target(
-        class_name, method_signature, encrypted
+        class_name, method_signature, encrypted, number.to_i(16)
       )
       target_to_contexts[target] = [] unless target_to_contexts.key?(target)
       target_to_contexts[target] << [original, out_reg]

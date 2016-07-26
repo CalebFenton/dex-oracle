@@ -8,28 +8,35 @@ class Undexguard < Plugin
   include CommonRegex
 
   STRING_LOOKUP_3INT = Regexp.new(
-    '^[ \t]*(' + ((CONST_NUMBER + '\s+') * 3) +
+    '^[ \t]*(' +
+    ((CONST_NUMBER + '\s+') * 3) +
     'invoke-static \{[vp]\d+, [vp]\d+, [vp]\d+\}, L([^;]+);->([^\(]+\(III\))Ljava/lang/String;' \
-    '\s+' + MOVE_RESULT_OBJECT + ')',
+    '\s+' +
+    MOVE_RESULT_OBJECT + ')',
     Regexp::MULTILINE
   )
 
   STRING_LOOKUP_1INT = Regexp.new(
-    '^[ \t]*(' + CONST_NUMBER + '\s+' \
+    '^[ \t]*(' +
+    CONST_NUMBER + '\s+' \
     'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(I\))Ljava/lang/String;' \
-    '\s+' + MOVE_RESULT_OBJECT + ')'
+    '\s+' +
+    MOVE_RESULT_OBJECT + ')'
   )
 
   BYTES_DECRYPT = Regexp.new(
-    '^[ \t]*(' + CONST_STRING + '\s+' \
+    '^[ \t]*(' +
+    CONST_STRING + '\s+' \
     'invoke-virtual \{[vp]\d+\}, Ljava\/lang\/String;->getBytes\(\)\[B\s+' \
     'move-result-object [vp]\d+\s+' \
     'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(\[B\))Ljava/lang/String;' \
-    '\s+' + MOVE_RESULT_OBJECT + ')'
+    '\s+' +
+    MOVE_RESULT_OBJECT + ')'
   )
 
   MULTI_BYTES_DECRYPT = Regexp.new(
-    '^[ \t]*(' + CONST_STRING + '\s+' \
+    '^[ \t]*(' +
+    CONST_STRING + '\s+' \
     'new-instance ([vp]\d+), L[^;]+;\s+' \
     'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(Ljava/lang/String;\))\[B\s+' \
     'move-result-object [vp]\d+\s+' +

@@ -18,7 +18,8 @@ class Oracle
     made_changes = process_plugins
     @smali_files.each(&:update) if made_changes
     optimizations = {}
-    Plugin.plugins.each { |p| optimizations.merge!(p.optimizations) }
+    optimizations = Plugin.plugins.collect { |plugin| plugin.optimizations }
+    optimizations = optimizations.inject(Hash.new(0)) { |memo, subhash| subhash.each { |prod, value| memo[prod] += value } ; memo }
     opt_str = optimizations.collect { |k, v| "#{k}=#{v}" } * ', '
     puts "Optimizations: #{opt_str}"
   end
