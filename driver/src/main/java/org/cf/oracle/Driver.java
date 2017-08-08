@@ -19,7 +19,7 @@ import com.google.gson.GsonBuilder;
 
 public class Driver {
 
-    private static final String DRIVER_DIR = "/data/local";
+    private static final String DRIVER_DIR = "/data/local/tmp";
     private static final String OUTPUT_HEADER = "===ORACLE DRIVER OUTPUT===\n";
     private static final String EXCEPTION_LOG = DRIVER_DIR + "/od-exception.txt";
     private static final String OUTPUT_FILE = DRIVER_DIR + "/od-output.json";
@@ -74,6 +74,13 @@ public class Driver {
         if (args.length < 1 && !multipleTargets) {
             showUsage();
             System.exit(-1);
+        }
+
+        try {
+            // If dex-oracle has some "InvocationTargetExceptions caused by UnsatisfiedLinkError: No implementation found for ..." you can load the required libraries here after you have pushed them to the device. Remember to run ./update_driver after that.
+            // System.load("/data/local/tmp/lib???.so");
+        } catch (Exception e) {
+            die("Failed to load native libraries", e);
         }
 
         try {
