@@ -25,7 +25,7 @@ class SmaliInput
     raise 'Smali could not be found on the path.' if Utility.which('smali').nil?
     out_dex = Tempfile.new(%w(oracle .dex)) if out_dex.nil?
     logger.info("Compiling DEX #{out_dex.path} ...")
-    exit_code = SmaliInput.exec("smali #{dir} -o #{out_dex.path}")
+    exit_code = SmaliInput.exec("smali assemble -o #{out_dex.path} #{dir}")
     # Remember kids, if you make a CLI, exit with non-zero status for failures
     raise 'Crap, smali compilation failed.' if $CHILD_STATUS.exitstatus != 0
     out_dex
@@ -50,7 +50,7 @@ class SmaliInput
     logger.debug("Disassembling #{input} ...")
     raise 'Baksmali could not be found on the path.' if Utility.which('baksmali').nil?
     @dir = Dir.mktmpdir
-    cmd = "baksmali #{input} -o #{@dir}"
+    cmd = "baksmali disassemble --debug-info false --output #{@dir} #{input}"
     SmaliInput.exec(cmd)
   end
 
