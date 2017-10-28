@@ -9,8 +9,8 @@ class StringDecryptor < Plugin
 
   STRING_DECRYPT = Regexp.new(
     '^[ \t]*(' +
-    CONST_STRING + '\s+' \
-    'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(Ljava/lang/String;\))Ljava/lang/String;' \
+    CONST_STRING_CAPTURE + '\s+' \
+    'invoke-static \{\2\}, L([^;]+);->([^\(]+\(Ljava/lang/String;\))Ljava/lang/String;' \
     '\s+' +
     MOVE_RESULT_OBJECT + ')'
   )
@@ -46,7 +46,7 @@ class StringDecryptor < Plugin
     target_to_contexts = {}
     matches = method.body.scan(STRING_DECRYPT)
     @optimizations[:string_decrypts] += matches.size if matches
-    matches.each do |original, encrypted, class_name, method_signature, out_reg|
+    matches.each do |original, _, encrypted, class_name, method_signature, out_reg|
       target = @driver.make_target(
         class_name, method_signature, encrypted
       )

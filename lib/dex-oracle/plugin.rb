@@ -1,10 +1,10 @@
 class Plugin
   module CommonRegex
-    # TODO: migrate all plugins to use capture groups by default, it makes them less likely to FP
     CONST_NUMBER = 'const(?:-wide(?:\/16|\/32|\/high16)?|\/16|\/4|\/high16)? [vp]\d+, (-?0x[a-f\d]+)'.freeze
     CONST_NUMBER_CAPTURE = 'const(?:-wide(?:\/16|\/32|\/high16)?|\/16|\/4|\/high16)? ([vp]\d+), (-?0x[a-f\d]+)'.freeze
     ESCAPE_STRING = '"(.*?)(?<!\\\\)"'.freeze
     CONST_STRING = 'const-string(?:/jumbo)? [vp]\d+, ' << ESCAPE_STRING << '.*'.freeze
+    CONST_STRING_CAPTURE = 'const-string(?:/jumbo)? ([vp]\d+), ' << ESCAPE_STRING << '.*'.freeze
     MOVE_RESULT_OBJECT = 'move-result-object ([vp]\d+)'.freeze
   end
 
