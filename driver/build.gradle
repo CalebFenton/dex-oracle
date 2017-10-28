@@ -1,5 +1,5 @@
-project.version = '1.0.0'
-version = '1.0.0'
+project.version = '1.1.0'
+version = '1.1.0'
 def jarVersion = version
 
 apply plugin: 'application'
@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.google.code.gson:gson:2.5'
+    compile 'com.google.code.gson:gson:2.8.2'
     // testCompile 'junit:junit:4.12-beta-3'
 }
 
