@@ -16,7 +16,7 @@ describe IndexedStringLookup do
       let(:batch_item) { ["const v0, 0x320fb210\n\n    invoke-static {v0}, Lxjmurla/gqscntaej/bfdiays/f;->a(I)Ljava/lang/String;\n\n    move-result-object v0", 'a(I)'] }
 
       it do
-        expect(driver).to receive(:make_target).with('0x320fb210', 'xjmurla/gqscntaej/bfdiays/f', 0).and_return(batch)
+        expect(driver).to receive(:make_target).with('xjmurla/gqscntaej/bfdiays/f', 'a(I)', 839889424).and_return(batch)
         expect(Plugin).to receive(:apply_batch).with(driver, { method => { batch => [batch_item] } }, kind_of(Proc))
         subject
       end
