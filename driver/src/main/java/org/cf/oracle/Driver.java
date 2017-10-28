@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.lang.Class;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +18,10 @@ import org.cf.oracle.options.TargetParser;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSerializer;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonElement;
 
 public class Driver {
 
@@ -23,7 +29,23 @@ public class Driver {
     private static final String OUTPUT_HEADER = "===ORACLE DRIVER OUTPUT===\n";
     private static final String EXCEPTION_LOG = DRIVER_DIR + "/od-exception.txt";
     private static final String OUTPUT_FILE = DRIVER_DIR + "/od-output.json";
-    private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
+    private static Gson GSON = buildGson();
+
+    private static Gson buildGson() {
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        JsonSerializer<Class> serializer = new JsonSerializer<Class>() {
+            @Override
+            public JsonElement serialize(Class src, Type typeOfSrc, JsonSerializationContext context) {
+                JsonPrimitive value = new JsonPrimitive(ClassNameUtils.toInternal(src));
+                return value;
+            }
+        };
+        gsonBuilder.registerTypeAdapter(Class.class, serializer);
+
+        gsonBuilder.disableHtmlEscaping();
+
+        return gsonBuilder.create();
+    }
 
     private static void die(String msg, Exception exception) {
         PrintWriter writer;
