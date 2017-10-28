@@ -46,9 +46,9 @@ class IndexedStringLookup < Plugin
     target_to_contexts = {}
     matches = method.body.scan(STRING_DECRYPT)
     @optimizations[:string_lookups] += matches.size if matches
-    matches.each do |original, _, index, class_name, method_signature, out_reg|
+    matches.each do |original, _, str_index, class_name, method_signature, out_reg|
       target = @driver.make_target(
-        class_name, method_signature, index.to_i(16)
+        class_name, method_signature, str_index.to_i(16)
       )
       target_to_contexts[target] = [] unless target_to_contexts.key?(target)
       target_to_contexts[target] << [original, out_reg]

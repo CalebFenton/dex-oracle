@@ -9,7 +9,7 @@ class IndexedClassLookup < Plugin
 
   CLASS_DECRYPT = Regexp.new(
     '^[ \t]*(' +
-    (CONST_NUMBER_CAPTURE + '\s+') +
+    CONST_NUMBER_CAPTURE + '\s+' +
     '(?:\:[^\n]+\n\s*)?' + # May have a label between const and invoke
     'invoke-static \{\2\}, L([^;]+);->([^\(]+\(I\))Ljava/lang/Class;' \
     '\s+' +
@@ -54,9 +54,9 @@ class IndexedClassLookup < Plugin
     target_to_contexts = {}
     matches = method.body.scan(CLASS_DECRYPT)
     @optimizations[:class_lookups] += matches.size if matches
-    matches.each do |original, _, index, class_name, method_signature, out_reg|
+    matches.each do |original, _, class_index, class_name, method_signature, out_reg|
       target = @driver.make_target(
-        class_name, method_signature, index.to_i(16)
+        class_name, method_signature, class_index.to_i(16)
       )
       target_to_contexts[target] = [] unless target_to_contexts.key?(target)
       target_to_contexts[target] << [original, out_reg]
