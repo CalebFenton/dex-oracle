@@ -24,7 +24,7 @@ optparse = OptionParser.new do |opts|
     exit
   end
 
-  opts.on('-s', '--specific-device ANDROID_SERIAL',
+  opts.on('-d', '--device ANDROID_SERIAL',
           "Device ID for driver execution, default=\"#{options[:device_id]}\"") do |id|
     options[:device_id] = id
   end
