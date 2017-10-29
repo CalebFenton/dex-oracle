@@ -7,10 +7,10 @@ A pattern based Dalvik deobfuscator which uses limited execution to improve sema
 [![Test Coverage](https://codeclimate.com/github/CalebFenton/dex-oracle/badges/coverage.svg)](https://codeclimate.com/github/CalebFenton/dex-oracle/coverage)
 
 **Before**
-![before](http://i.imgur.com/nICE4N4.png)
+![before](https://i.imgur.com/nICE4N4.png)
 
 **After**
-![after](http://i.imgur.com/aFFd9eM.png)
+![after](https://i.imgur.com/aFFd9eM.png)
 
 _sha1: a68d5d2da7550d35f7dbefc21b7deebe3f4005f3_
 
@@ -134,4 +134,5 @@ It's possible that a plugin sees a pattern it thinks is obfuscation but is actua
 
 ## More Information
 
-1. [TetCon 2016 Android Deobfuscation Presentation](http://www.slideshare.net/tekproxy/tetcon-2016)
+1. [TetCon 2016 Android Deobfuscation Presentation](htts://www.slideshare.net/tekproxy/tetcon-2016)
+2. [Hacking with dex-oracle for Android Malware Deobfuscation](https://rednaga.io/2017/10/28/hacking-with-dex-oracle-for-android-malware-deobfuscation/)
