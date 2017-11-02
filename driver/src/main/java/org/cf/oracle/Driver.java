@@ -1,5 +1,6 @@
 package org.cf.oracle;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -25,10 +26,9 @@ import com.google.gson.JsonElement;
 
 public class Driver {
 
-    private static final String DRIVER_DIR = "/data/local/tmp";
     private static final String OUTPUT_HEADER = "===ORACLE DRIVER OUTPUT===\n";
-    private static final String EXCEPTION_LOG = DRIVER_DIR + "/od-exception.txt";
-    private static final String OUTPUT_FILE = DRIVER_DIR + "/od-output.json";
+    private static String EXCEPTION_LOG;
+    private static String OUTPUT_FILE;
     private static Gson GSON = buildGson();
 
     private static Gson buildGson() {
@@ -36,8 +36,7 @@ public class Driver {
         JsonSerializer<Class> serializer = new JsonSerializer<Class>() {
             @Override
             public JsonElement serialize(Class src, Type typeOfSrc, JsonSerializationContext context) {
-                JsonPrimitive value = new JsonPrimitive(ClassNameUtils.toInternal(src));
-                return value;
+                return new JsonPrimitive(ClassNameUtils.toInternal(src));
             }
         };
         gsonBuilder.registerTypeAdapter(Class.class, serializer);
@@ -76,7 +75,7 @@ public class Driver {
             return null;
         }
 
-        String output = "";
+        String output;
         try {
             output = GSON.toJson(returnClass.cast(returnObject));
         } catch (Exception ex) {
@@ -92,6 +91,19 @@ public class Driver {
     }
 
     public static void main(String[] args) {
+        // find out the driver dir as it is different on some devices
+        for (String driverDir : new String[] { "/data/local/tmp", "/data/local" }) {
+            if (new File(driverDir).exists() && new File(driverDir).canWrite()) {
+                EXCEPTION_LOG = driverDir + "/od-exception.txt";
+                OUTPUT_FILE = driverDir + "/od-output.json";
+                break;
+            }
+        }
+        if (OUTPUT_FILE == null) {
+            System.err.println("Failed to find driver directory!");
+            System.exit(-1);
+        }
+
         boolean multipleTargets = args.length < 2 && args[0].startsWith("@");
         if (args.length < 1 && !multipleTargets) {
             showUsage();
@@ -131,7 +143,7 @@ public class Driver {
                 System.out.println(OUTPUT_HEADER + output);
             }
         } else {
-            Map<String, String[]> idToOutput = new HashMap<String, String[]>();
+            Map<String, String[]> idToOutput = new HashMap<>();
             for (InvocationTarget target : targets) {
                 String status;
                 try {
