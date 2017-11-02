@@ -1,5 +1,5 @@
-require 'codeclimate-test-reporter'
-CodeClimate::TestReporter.start
+require 'simplecov'
+SimpleCov.start
 
 require 'bundler/setup'
 Bundler.setup
@@ -8,5 +8,6 @@ Dir["#{File.dirname(__FILE__)}/../lib/**/*.rb"].each { |f| require f unless f.en
 Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each { |f| require f }
 
 require 'rspec/its'
+
 RSpec.configure do |config|
 end

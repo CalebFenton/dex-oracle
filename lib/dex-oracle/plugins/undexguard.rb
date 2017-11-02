@@ -9,8 +9,8 @@ class Undexguard < Plugin
 
   STRING_LOOKUP_3INT = Regexp.new(
     '^[ \t]*(' +
-    ((CONST_NUMBER + '\s+') * 3) +
-    'invoke-static \{[vp]\d+, [vp]\d+, [vp]\d+\}, L([^;]+);->([^\(]+\(III\))Ljava/lang/String;' \
+    ((CONST_NUMBER_CAPTURE + '\s+') * 3) +
+    'invoke-static \{\2, \4, \6\}, L([^;]+);->([^\(]+\(III\))Ljava/lang/String;' \
     '\s+' +
     MOVE_RESULT_OBJECT + ')',
     Regexp::MULTILINE
@@ -18,22 +18,23 @@ class Undexguard < Plugin
 
   STRING_LOOKUP_1INT = Regexp.new(
     '^[ \t]*(' +
-    CONST_NUMBER + '\s+' \
-    'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(I\))Ljava/lang/String;' \
+    CONST_NUMBER_CAPTURE + '\s+' \
+    'invoke-static \{\2\}, L([^;]+);->([^\(]+\(I\))Ljava/lang/String;' \
     '\s+' +
     MOVE_RESULT_OBJECT + ')'
   )
 
   BYTES_DECRYPT = Regexp.new(
     '^[ \t]*(' +
-    CONST_STRING + '\s+' \
-    'invoke-virtual \{[vp]\d+\}, Ljava\/lang\/String;->getBytes\(\)\[B\s+' \
-    'move-result-object [vp]\d+\s+' \
-    'invoke-static \{[vp]\d+\}, L([^;]+);->([^\(]+\(\[B\))Ljava/lang/String;' \
+    CONST_STRING_CAPTURE + '\s+' \
+    'invoke-virtual \{\2\}, Ljava\/lang\/String;->getBytes\(\)\[B\s+' \
+    'move-result-object ([vp]\d+)\s+' \
+    'invoke-static \{\4\}, L([^;]+);->([^\(]+\(\[B\))Ljava/lang/String;' \
     '\s+' +
     MOVE_RESULT_OBJECT + ')'
   )
 
+  # Probably so specific it doesn't need to use CAPTURE regexes to prevent false positives
   MULTI_BYTES_DECRYPT = Regexp.new(
     '^[ \t]*(' +
     CONST_STRING + '\s+' \
@@ -86,7 +87,7 @@ class Undexguard < Plugin
     target_to_contexts = {}
     matches = method.body.scan(STRING_LOOKUP_3INT)
     @optimizations[:string_lookups] += matches.size if matches
-    matches.each do |original, arg1, arg2, arg3, class_name, method_signature, out_reg|
+    matches.each do |original, _, arg1, _, arg2, _, arg3, class_name, method_signature, out_reg|
       target = @driver.make_target(
         class_name, method_signature, arg1.to_i(16), arg2.to_i(16), arg3.to_i(16)
       )
@@ -101,7 +102,7 @@ class Undexguard < Plugin
     target_to_contexts = {}
     matches = method.body.scan(STRING_LOOKUP_1INT)
     @optimizations[:string_lookups] += matches.size if matches
-    matches.each do |original, arg1, class_name, method_signature, out_reg|
+    matches.each do |original, _, arg1, class_name, method_signature, out_reg|
       target = @driver.make_target(
         class_name, method_signature, arg1.to_i(16)
       )
@@ -116,7 +117,7 @@ class Undexguard < Plugin
     target_to_contexts = {}
     matches = method.body.scan(BYTES_DECRYPT)
     @optimizations[:string_decrypts] += matches.size if matches
-    matches.each do |original, encrypted, class_name, method_signature, out_reg|
+    matches.each do |original, _, encrypted, _, class_name, method_signature, out_reg|
       target = @driver.make_target(
         class_name, method_signature, encrypted.bytes.to_a
       )

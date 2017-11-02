@@ -190,6 +190,7 @@ class Driver
     # Successful driver run should include driver header
     # Otherwise it may be a Segmentation fault or Killed
     logger.debug("Full output: #{full_output.inspect}")
+    output_lines.reject! { |e| e.start_with?('WARNING:') }
     header = output_lines[0]
     raise "app_process execution failure, output: '#{full_output}'" if header != OUTPUT_HEADER
 
