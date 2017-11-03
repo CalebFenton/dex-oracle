@@ -7,7 +7,6 @@ build/
 .gradle
 gradle.properties
 
-
 # Eclipse
 .classpath
 .project
@@ -16,7 +15,6 @@ gradle.properties
 # IDEA
 .idea
 *.iml
-local.properties
 
 # Logging
 log.txt
