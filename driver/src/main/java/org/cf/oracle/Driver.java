@@ -1,6 +1,5 @@
 package org.cf.oracle;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -27,8 +26,8 @@ import com.google.gson.JsonElement;
 public class Driver {
 
     private static final String OUTPUT_HEADER = "===ORACLE DRIVER OUTPUT===\n";
-    private static String EXCEPTION_LOG = "od-exception.txt";
-    private static String OUTPUT_FILE = "od-output.json";
+    private static final String EXCEPTION_LOG = "od-exception.txt";
+    private static final String OUTPUT_FILE = "od-output.json";
     private static Gson GSON = buildGson();
 
     private static Gson buildGson() {
