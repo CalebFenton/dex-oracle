@@ -54,13 +54,21 @@ class Driver
       # And zip internally renames files when creating them
       tempzip_path = tz.path
       tz.close
-      Utility.create_zip(tempzip_path, 'classes.dex' => Resources.driver_dex, 'classes2.dex' => dex)
+      Utility.create_zip(tempzip_path, 'classes.dex' => Resources.driver_dex)
       adb("push #{tz.path} #{@driver_dir}/od.zip")
+
+      tz2 = Tempfile.new(%w(oracle-driver .zip))
+      tempzip_path = tz2.path
+      tz2.close
+      Utility.create_zip(tempzip_path, 'classes.dex' => dex)
+      adb("push #{tz2.path} #{@driver_dir}/app.zip")
     rescue => e
       puts "Error installing driver: #{e}\n#{e.backtrace.join("\n\t")}"
     ensure
       tz.close if tz
       tz.unlink if tz
+      tz2.close if tz2
+      tz2.unlink if tz2
     end
   end
 

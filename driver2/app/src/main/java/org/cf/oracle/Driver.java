@@ -1,4 +1,4 @@
-package org.cf.driver;
+package org.cf.oracle;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -84,8 +84,8 @@ public class Driver {
     }
 
     private static void showUsage() {
-        System.out.println("Usage: export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.driver.Driver <class> <method> [<parameter type>:<parameter value json>]");
-        System.out.println("       export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.driver.Driver @<json file>");
+        System.out.println("Usage: export CLASSPATH=/data/local/od.zip; app_process /system/bin Driver <class> <method> [<parameter type>:<parameter value json>]");
+        System.out.println("       export CLASSPATH=/data/local/od.zip; app_process /system/bin Driver @<json file>");
     }
 
     public static void main(String[] args) {
