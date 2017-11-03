@@ -5,6 +5,8 @@
 # Gradle
 build/
 .gradle
+gradle.properties
+gradle
 
 # Eclipse
 .classpath
