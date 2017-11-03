@@ -27,8 +27,8 @@ import com.google.gson.JsonElement;
 public class Driver {
 
     private static final String OUTPUT_HEADER = "===ORACLE DRIVER OUTPUT===\n";
-    private static String EXCEPTION_LOG;
-    private static String OUTPUT_FILE;
+    private static String EXCEPTION_LOG = "od-exception.txt";
+    private static String OUTPUT_FILE = "od-output.json";
     private static Gson GSON = buildGson();
 
     private static Gson buildGson() {
@@ -91,19 +91,6 @@ public class Driver {
     }
 
     public static void main(String[] args) {
-        // find out the driver dir as it is different on some devices
-        for (String driverDir : new String[] { "/data/local/tmp", "/data/local" }) {
-            if (new File(driverDir).exists() && new File(driverDir).canWrite()) {
-                EXCEPTION_LOG = driverDir + "/od-exception.txt";
-                OUTPUT_FILE = driverDir + "/od-output.json";
-                break;
-            }
-        }
-        if (OUTPUT_FILE == null) {
-            System.err.println("Failed to find driver directory!");
-            System.exit(-1);
-        }
-
         boolean multipleTargets = args.length < 2 && args[0].startsWith("@");
         if (args.length < 1 && !multipleTargets) {
             showUsage();

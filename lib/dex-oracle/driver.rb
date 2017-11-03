@@ -32,7 +32,7 @@ class Driver
       exit -1
     end
     logger.debug "Using #{@driver_dir} as driver directory ..."
-    @cmd_stub = "export CLASSPATH=#{@driver_dir}/od.zip; app_process /system/bin #{DRIVER_CLASS}"
+    @cmd_stub = "cd #{@driver_dir}; export CLASSPATH=#{@driver_dir}/od.zip; app_process /system/bin #{DRIVER_CLASS}"
 
     @cache = {}
   end
