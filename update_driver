@@ -3,6 +3,7 @@
 cd driver
 
 echo "[*] Building driver ..."
+rm app/build/outputs/apk/release/app-release-unsigned.apk
 ./gradlew clean assemble
 
 echo "[*] Updating driver stub ..."
@@ -11,3 +12,4 @@ cp tmp/classes.dex ../res/driver.dex
 rm -Rf tmp
 
 echo "[*] Done."
+
