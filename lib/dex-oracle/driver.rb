@@ -192,7 +192,14 @@ class Driver
     logger.debug("Full output: #{full_output.inspect}")
     output_lines.reject! { |e| e.start_with?('WARNING:') }
     header = output_lines[0]
-    raise "app_process execution failure, output: '#{full_output}'" if header != OUTPUT_HEADER
+    if header != OUTPUT_HEADER
+      print "app_process execution failure, output: '#{full_output}'"
+      exception = adb("shell cat #{@driver_dir}/od-exception.txt").strip
+      unless exception.end_with?('No such file or directory')
+        adb("shell rm #{@driver_dir}/od-exception.txt")
+        raise exception
+      end
+    end
 
     output_lines[1..-2].join("\n").rstrip
   end
