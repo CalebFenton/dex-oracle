@@ -1,9 +1,21 @@
-*.iml
-.gradle
-/local.properties
-/.idea/workspace.xml
-/.idea/libraries
+# Macs
 .DS_Store
-/build
-/captures
-.externalNativeBuild
+**/.DS_Store
+
+# Gradle
+build/
+.gradle
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# IDEA
+.idea
+*.iml
+local.properties
+
+# Logging
+log.txt
+/bin/
