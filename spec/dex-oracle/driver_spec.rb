@@ -20,7 +20,7 @@ describe Driver do
     allow_any_instance_of(Driver).to receive(:get_driver_dir).and_return('/data/local')
     Driver.new(device_id)
   end
-  let(:driver_stub) { 'export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.oracle.Driver' }
+  let(:driver_stub) { 'cd /data/local; export CLASSPATH=/data/local/od.zip; app_process /system/bin org.cf.oracle.Driver' }
 
   describe '#make_target' do
     let(:device_id) { '' }
