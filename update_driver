@@ -3,9 +3,13 @@
 cd driver
 
 echo "[*] Building driver ..."
-./gradlew clean fatjar
+rm app/build/outputs/apk/release/app-release-unsigned.apk
+./gradlew clean assemble
 
 echo "[*] Updating driver stub ..."
-dx --dex --force-jumbo --output=../res/driver.dex build/libs/driver.jar
+unzip app/build/outputs/apk/release/app-release-unsigned.apk -d tmp
+cp tmp/classes.dex ../res/driver.dex
+rm -Rf tmp
 
 echo "[*] Done."
+

@@ -1,11 +1,20 @@
 package org.cf.oracle;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+
+import org.cf.oracle.options.InvocationTarget;
+import org.cf.oracle.options.TargetParser;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.lang.Class;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -13,22 +22,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.cf.oracle.options.InvocationTarget;
-import org.cf.oracle.options.TargetParser;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSerializer;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonElement;
-
 public class Driver {
 
-    private static final String DRIVER_DIR = "/data/local";
     private static final String OUTPUT_HEADER = "===ORACLE DRIVER OUTPUT===\n";
-    private static final String EXCEPTION_LOG = DRIVER_DIR + "/od-exception.txt";
-    private static final String OUTPUT_FILE = DRIVER_DIR + "/od-output.json";
+    private static final String EXCEPTION_LOG = "od-exception.txt";
+    private static final String OUTPUT_FILE = "od-output.json";
     private static Gson GSON = buildGson();
 
     private static Gson buildGson() {
@@ -36,8 +34,7 @@ public class Driver {
         JsonSerializer<Class> serializer = new JsonSerializer<Class>() {
             @Override
             public JsonElement serialize(Class src, Type typeOfSrc, JsonSerializationContext context) {
-                JsonPrimitive value = new JsonPrimitive(ClassNameUtils.toInternal(src));
-                return value;
+                return new JsonPrimitive(ClassNameUtils.toInternal(src));
             }
         };
         gsonBuilder.registerTypeAdapter(Class.class, serializer);
@@ -76,7 +73,7 @@ public class Driver {
             return null;
         }
 
-        String output = "";
+        String output;
         try {
             output = GSON.toJson(returnClass.cast(returnObject));
         } catch (Exception ex) {
@@ -96,6 +93,13 @@ public class Driver {
         if (args.length < 1 && !multipleTargets) {
             showUsage();
             System.exit(-1);
+        }
+
+        try {
+            // If dex-oracle has some "InvocationTargetExceptions caused by UnsatisfiedLinkError: No implementation found for ..." you can load the required libraries here after you have pushed them to the device. Remember to run ./update_driver after that.
+            // System.load("/data/local/tmp/lib???.so");
+        } catch (Exception e) {
+            die("Failed to load native libraries", e);
         }
 
         try {
@@ -124,7 +128,7 @@ public class Driver {
                 System.out.println(OUTPUT_HEADER + output);
             }
         } else {
-            Map<String, String[]> idToOutput = new HashMap<String, String[]>();
+            Map<String, String[]> idToOutput = new HashMap<>();
             for (InvocationTarget target : targets) {
                 String status;
                 try {

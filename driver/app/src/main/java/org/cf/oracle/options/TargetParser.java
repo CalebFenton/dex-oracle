@@ -1,13 +1,5 @@
 package org.cf.oracle.options;
 
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-
-import org.cf.oracle.FileUtils;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -15,7 +7,19 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
+import org.cf.oracle.FileUtils;
+
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+
+import dalvik.system.DexClassLoader;
+
 public class TargetParser {
+
+    private static DexClassLoader appClassLoader;
 
     private static InvocationTarget buildTarget(Gson gson, String className, String methodName, String... args)
                     throws ClassNotFoundException, NoSuchMethodException, SecurityException {
@@ -36,7 +40,7 @@ public class TargetParser {
                 if (parameterTypes[i] == String.class) {
                     try {
                         // Normalizing strings to byte[] avoids escaping ruby, bash, adb shell, and java
-                        byte[] stringBytes = (byte[]) gson.fromJson(jsonValue, Class.forName("[B"));
+                        byte[] stringBytes = (byte[]) gson.fromJson(jsonValue, appClassLoader.loadClass("[B"));
                         methodArguments[i] = new String(stringBytes);
                     } catch (JsonSyntaxException ex) {
                         // Possibly not using byte array format for string (good luck)
@@ -49,7 +53,7 @@ public class TargetParser {
             }
         }
 
-        Class<?> methodClass = Class.forName(className);
+        Class<?> methodClass = appClassLoader.loadClass(className);
         Method method = methodClass.getDeclaredMethod(methodName, parameterTypes);
 
         return new InvocationTarget(id, args, methodArguments, method);
@@ -99,12 +103,13 @@ public class TargetParser {
         } else if (className.equals("D")) {
             return double.class;
         } else {
-            return Class.forName(className);
+            return appClassLoader.loadClass(className);
         }
     }
 
     public static List<InvocationTarget> parse(String[] args, Gson gson) throws ClassNotFoundException,
                     NoSuchMethodException, SecurityException, IOException {
+        appClassLoader = new DexClassLoader("app.zip", ".", ".", ClassLoader.getSystemClassLoader());
         if (args[0].startsWith("@")) {
             String fileName = args[0].substring(1);
 

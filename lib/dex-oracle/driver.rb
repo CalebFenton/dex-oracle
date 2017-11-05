@@ -32,7 +32,7 @@ class Driver
       exit -1
     end
     logger.debug "Using #{@driver_dir} as driver directory ..."
-    @cmd_stub = "export CLASSPATH=#{@driver_dir}/od.zip; app_process /system/bin #{DRIVER_CLASS}"
+    @cmd_stub = "cd #{@driver_dir}; export CLASSPATH=#{@driver_dir}/od.zip; app_process /system/bin #{DRIVER_CLASS}"
 
     @cache = {}
   end
@@ -47,24 +47,6 @@ class Driver
       raise "#{Resources.dx} does not exist and is required for DexMerger" unless File.exist?(Resources.dx)
       raise "#{Resources.driver_dex} does not exist" unless File.exist?(Resources.driver_dex)
       logger.debug("Merging input DEX (#{dex.path}) and driver DEX (#{Resources.driver_dex}) ...")
-      tf = Tempfile.new(%w(oracle-driver .dex))
-      cmd = "java -cp #{Resources.dx} com.android.dx.merge.DexMerger #{tf.path} #{dex.path} #{Resources.driver_dex}"
-      stdout, stderr = exec(cmd)
-      # Ideally, it says something like this:
-      # Merged dex #1 (36 defs/87.9KiB)
-      # Merged dex #2 (1225 defs/1092.7KiB)
-      # Result is 1261 defs/1375.0KiB. Took 0.2s
-      # But it might say this:
-      # Exception in thread "main" com.android.dex.DexIndexOverflowException: Cannot merge new index 65776 into a non-jumbo instruction!
-      if stderr.start_with?('Exception in thread "main"')
-        logger.error("Failure to merge input DEX and driver DEX:\n#{stderr}")
-        if stderr.include?('DexIndexOverflowException')
-          logger.error("Your input DEX inexplicably contains const-string and const-string/jumbo. This probably means someone fucked with it. In any case, it means DexMerge is failing because there are too many strings.\nTry this: baksmali the DEX, replace all const-string instructions with const-string/jumbo, then recompile with smali and use that DEX as input. Sorry, I don't want to do this for you. It's too complicated.")
-        end
-        exit -1
-      end
-      tf.close
-
       # Zip merged dex and push to device
       logger.debug('Pushing merged driver to device ...')
       tz = Tempfile.new(%w(oracle-driver .zip))
@@ -72,15 +54,21 @@ class Driver
       # And zip internally renames files when creating them
       tempzip_path = tz.path
       tz.close
-      Utility.create_zip(tempzip_path, 'classes.dex' => tf)
+      Utility.create_zip(tempzip_path, 'classes.dex' => Resources.driver_dex)
       adb("push #{tz.path} #{@driver_dir}/od.zip")
+
+      tz2 = Tempfile.new(%w(oracle-driver .zip))
+      tempzip_path = tz2.path
+      tz2.close
+      Utility.create_zip(tempzip_path, 'classes.dex' => dex)
+      adb("push #{tz2.path} #{@driver_dir}/app.zip")
     rescue => e
       puts "Error installing driver: #{e}\n#{e.backtrace.join("\n\t")}"
     ensure
-      tf.close if tf
-      tf.unlink if tf
       tz.close if tz
       tz.unlink if tz
+      tz2.close if tz2
+      tz2.unlink if tz2
     end
   end
 
@@ -155,6 +143,8 @@ class Driver
       stdout = adb("shell -x ls #{dir}")
       next if stdout == "ls: #{dir}: Permission denied"
       next if stdout == "ls: #{dir}: No such file or directory"
+      stdout = adb("shell ls #{dir}")
+      next if stdout == "opendir failed, Permission denied"
       return dir
     end
 
@@ -210,7 +200,16 @@ class Driver
     logger.debug("Full output: #{full_output.inspect}")
     output_lines.reject! { |e| e.start_with?('WARNING:') }
     header = output_lines[0]
-    raise "app_process execution failure, output: '#{full_output}'" if header != OUTPUT_HEADER
+    if header != OUTPUT_HEADER
+      print "app_process execution failure, output: '#{full_output}'"
+      exception = adb("shell cat #{@driver_dir}/od-exception.txt").strip
+      unless exception.end_with?('No such file or directory')
+        adb("shell rm #{@driver_dir}/od-exception.txt")
+        raise exception
+      else
+        raise "app_process execution failure, output: '#{full_output}'"
+      end
+    end
 
     output_lines[1..-2].join("\n").rstrip
   end

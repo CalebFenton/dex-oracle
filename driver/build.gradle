@@ -1,52 +1,27 @@
-project.version = '1.1.0'
-version = '1.1.0'
-def jarVersion = version
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
 
-apply plugin: 'application'
-mainClassName = 'org.cf.driver.OracleDriver'
+buildscript {
+    
+    repositories {
+        google()
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.0.0'
+        
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    compile 'com.google.code.gson:gson:2.8.2'
-    // testCompile 'junit:junit:4.12-beta-3'
-}
-
-gradle.projectsEvaluated {
-    tasks.withType(JavaCompile) {
-        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
     }
 }
 
-apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'idea'
-
-group = 'org.cf'
-sourceCompatibility = 1.7
-
-jar {
-    version = jarVersion
-}
-
-// Build a separate jar that contains all dependencies
-task fatJar(type: Jar) {
-    from sourceSets.main.output
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-
-    manifest {
-        attributes('Main-Class': mainClassName)
-    }
-
-    doLast {
-        if (!System.getProperty('os.name').toLowerCase().contains('windows')) {
-            ant.symlink(link: file("${destinationDir}/driver.jar"), resource: archivePath, overwrite: true)
-        }
+allprojects {
+    repositories {
+        google()
+        jcenter()
     }
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '2.7'
+task clean(type: Delete) {
+    delete rootProject.buildDir
 }

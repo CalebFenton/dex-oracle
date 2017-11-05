@@ -5,6 +5,7 @@
 # Gradle
 build/
 .gradle
+gradle.properties
 
 # Eclipse
 .classpath
@@ -13,6 +14,7 @@ build/
 
 # IDEA
 .idea
+*.iml
 
 # Logging
 log.txt
