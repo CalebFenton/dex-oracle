@@ -4,3 +4,4 @@ sandbox/
 !res/driver.dex
 *.json
 Gemfile.lock
+coverage/
