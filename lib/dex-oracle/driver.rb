@@ -206,6 +206,8 @@ class Driver
       unless exception.end_with?('No such file or directory')
         adb("shell rm #{@driver_dir}/od-exception.txt")
         raise exception
+      else
+        raise "app_process execution failure, output: '#{full_output}'"
       end
     end
 
