@@ -32,7 +32,7 @@ class Driver
       exit -1
     end
     logger.debug "Using #{@driver_dir} as driver directory ..."
-    @cmd_stub = "export CLASSPATH=#{@driver_dir}/od.zip; app_process /system/bin #{DRIVER_CLASS}"
+    @cmd_stub = "cd #{@driver_dir}; export CLASSPATH=#{@driver_dir}/od.zip; app_process /system/bin #{DRIVER_CLASS}"
 
     @cache = {}
   end
@@ -155,6 +155,8 @@ class Driver
       stdout = adb("shell -x ls #{dir}")
       next if stdout == "ls: #{dir}: Permission denied"
       next if stdout == "ls: #{dir}: No such file or directory"
+      stdout = adb("shell ls #{dir}")
+      next if stdout == "opendir failed, Permission denied"
       return dir
     end
 
