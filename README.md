@@ -24,8 +24,8 @@ Since you're an elite Android reverser, I'm sure you already have Smali and Baks
 
 ```bash
 mkdir ~/bin || cd ~/bin
-curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/smali-2.1.2.jar && mv smali-*.jar smali.jar
-curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.1.2.jar && mv baksmali-*.jar baksmali.jar
+curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/smali-2.2.2.jar && mv smali-*.jar smali.jar
+curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.2.2.jar && mv baksmali-*.jar baksmali.jar
 curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/smali
 curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali
 chmod +x ./smali ./baksmali
