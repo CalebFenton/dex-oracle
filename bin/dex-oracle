@@ -10,6 +10,8 @@ require_relative '../lib/dex-oracle/logging'
 
 include Logging
 
+Zip.warn_invalid_date = false
+
 options = {
   device_id: ENV['ANDROID_SERIAL'] || '',
   timeout: 60 * 2,
