@@ -53,7 +53,7 @@ bundle install
 
 ### Step 4. Connect a Device or Emulator
 
-_You must have either an emulator running or a device plugged in for Oracle to work._
+_You must have either an emulator running or a device plugged in for Oracle to work. The minimum required android version is 5.0!_
 
 Oracle needs to execute  methods on an live Android system. This can either be on a device or an emulator (preferred). If it's a device, _make sure you don't mind running potentially hostile code on it_.
 
