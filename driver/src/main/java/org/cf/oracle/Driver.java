@@ -27,8 +27,8 @@ public class Driver {
 
     private static final String DRIVER_DIR = "/data/local";
     private static final String OUTPUT_HEADER = "===ORACLE DRIVER OUTPUT===\n";
-    private static final String EXCEPTION_LOG = DRIVER_DIR + "/od-exception.txt";
-    private static final String OUTPUT_FILE = DRIVER_DIR + "/od-output.json";
+    private static final String EXCEPTION_LOG = "od-exception.txt";
+    private static final String OUTPUT_FILE = "od-output.json";
     private static Gson GSON = buildGson();
 
     private static Gson buildGson() {

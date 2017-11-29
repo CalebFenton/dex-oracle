@@ -1,6 +1,9 @@
 sandbox/
 *.apk
 *.dex
+!spec/data/helloworld.apk
+!spec/data/helloworld.dex
 !res/driver.dex
 *.json
 Gemfile.lock
+coverage/

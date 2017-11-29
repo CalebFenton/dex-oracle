@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+require 'pathname'
 require 'optparse'
 
 require_relative '../lib/oracle'
@@ -8,6 +9,8 @@ require_relative '../lib/dex-oracle/utility'
 require_relative '../lib/dex-oracle/logging'
 
 include Logging
+
+Zip.warn_invalid_date = false
 
 options = {
   device_id: ENV['ANDROID_SERIAL'] || '',
@@ -82,7 +85,8 @@ unless `adb devices`.strip != 'List of devices attached'
 end
 
 start = Time.now
-input = ARGV[0]
+input = Pathname.new(ARGV[0]).realpath.to_s
+
 smali_input = SmaliInput.new(input)
 
 driver = Driver.new(options[:device_id], options[:timeout])
