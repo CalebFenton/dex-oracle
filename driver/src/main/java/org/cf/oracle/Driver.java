@@ -107,8 +107,8 @@ public class Driver {
         List<InvocationTarget> targets = null;
         try {
             targets = TargetParser.parse(args, GSON);
-        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IOException e) {
-            die("Unable to parse targets", e);
+        } catch (IOException e) {
+            die("Exception parsing targets", e);
         }
 
         String output = null;
@@ -117,7 +117,7 @@ public class Driver {
             try {
                 output = invokeMethod(target.getMethod(), target.getArguments());
             } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | IOException e) {
-                die("Error executing '" + target.getMethod() + "' with " + target.getArgumentsString(), e);
+                die("Error executing " + target, e);
             }
 
             if (output != null) {
@@ -127,17 +127,17 @@ public class Driver {
             Map<String, String[]> idToOutput = new HashMap<String, String[]>();
             for (InvocationTarget target : targets) {
                 String status;
-                try {
-                    output = invokeMethod(target.getMethod(), target.getArguments());
-                    status = "success";
-                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | IOException e) {
-                    StringBuilder sb = new StringBuilder("Error executing '");
-                    sb.append(target.getMethod()).append("' with ").append(target.getArgumentsString()).append('\n');
-                    StringWriter sw = new StringWriter();
-                    e.printStackTrace(new PrintWriter(sw));
-                    sb.append(sw.getBuffer());
-                    output = sb.toString();
+                if (target.getParseException() != null) {
+                    output = "Error parsing " + target;
                     status = "failure";
+                } else {
+                    try {
+                        output = invokeMethod(target.getMethod(), target.getArguments());
+                        status = "success";
+                    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | IOException e) {
+                        output = "Error executing " + target;
+                        status = "failure";
+                    }
                 }
                 idToOutput.put(target.getId(), new String[] { status, output });
             }

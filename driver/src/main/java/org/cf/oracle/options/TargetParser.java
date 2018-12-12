@@ -1,29 +1,31 @@
 package org.cf.oracle.options;
 
+import com.google.gson.*;
+import org.cf.oracle.FileUtils;
+
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.cf.oracle.FileUtils;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
-
 public class TargetParser {
 
-    private static InvocationTarget buildTarget(Gson gson, String className, String methodName, String... args)
-                    throws ClassNotFoundException, NoSuchMethodException, SecurityException {
-        return buildTarget(gson, "", className, methodName, args);
+    private static void parseTarget(Gson gson, String className, String methodName, String... args) {
+        InvocationTarget target = new InvocationTarget("none", className, methodName, args);
+        parseTargetExceptionally(gson, target);
     }
 
-    private static InvocationTarget buildTarget(Gson gson, String id, String className, String methodName,
-                    String... args) throws ClassNotFoundException, NoSuchMethodException, SecurityException {
+    private static void parseTargetExceptionally(Gson gson, InvocationTarget target) {
+        try {
+            parseTarget(gson, target);
+        } catch (ClassNotFoundException | NoSuchMethodException | ExceptionInInitializerError e) {
+            target.setParseException(e);
+        }
+    }
+
+    private static void parseTarget(Gson gson, InvocationTarget target) throws ClassNotFoundException, NoSuchMethodException {
+        String[] args = target.getArgumentStrings();
         Class<?>[] parameterTypes = new Class[args.length];
         Object[] methodArguments = new Object[parameterTypes.length];
         for (int i = 0; i < parameterTypes.length; i++) {
@@ -36,7 +38,7 @@ public class TargetParser {
                 if (parameterTypes[i] == String.class) {
                     try {
                         // Normalizing strings to byte[] avoids escaping ruby, bash, adb shell, and java
-                        byte[] stringBytes = (byte[]) gson.fromJson(jsonValue, Class.forName("[B"));
+                        byte[] stringBytes = gson.fromJson(jsonValue, byte[].class);
                         methodArguments[i] = new String(stringBytes);
                     } catch (JsonSyntaxException ex) {
                         // Possibly not using byte array format for string (good luck)
@@ -48,15 +50,14 @@ public class TargetParser {
                 }
             }
         }
+        target.setArguments(methodArguments);
 
-        Class<?> methodClass = Class.forName(className);
-        Method method = methodClass.getDeclaredMethod(methodName, parameterTypes);
-
-        return new InvocationTarget(id, args, methodArguments, method);
+        Class<?> methodClass = Class.forName(target.getClassName());
+        Method method = methodClass.getDeclaredMethod(target.getMethodName(), parameterTypes);
+        target.setMethod(method);
     }
 
-    private static List<InvocationTarget> loadTargetsFromFile(Gson gson, String fileName) throws IOException,
-                    ClassNotFoundException, NoSuchMethodException, SecurityException {
+    private static List<InvocationTarget> loadTargetsFromFile(Gson gson, String fileName) throws IOException {
         String targetJson = FileUtils.readFile(fileName);
         JsonArray targetItems = new JsonParser().parse(targetJson).getAsJsonArray();
         // JsonArray targetItems = json.getAsJsonArray();
@@ -72,7 +73,8 @@ public class TargetParser {
                 arguments[i] = argumentsJson.get(i).getAsString();
             }
 
-            InvocationTarget target = buildTarget(gson, id, className, methodName, arguments);
+            InvocationTarget target = new InvocationTarget(id, className, methodName, arguments);
+            parseTargetExceptionally(gson, target);
             targets.add(target);
         }
 
@@ -103,14 +105,18 @@ public class TargetParser {
         }
     }
 
-    public static List<InvocationTarget> parse(String[] args, Gson gson) throws ClassNotFoundException,
-                    NoSuchMethodException, SecurityException, IOException {
+    public static List<InvocationTarget> parse(String[] args, Gson gson) throws IOException {
         if (args[0].startsWith("@")) {
             String fileName = args[0].substring(1);
 
             return loadTargetsFromFile(gson, fileName);
         } else {
-            InvocationTarget target = buildTarget(gson, args[0], args[1], Arrays.copyOfRange(args, 2, args.length));
+            String className = args[0];
+            String methodName = args[1];
+            String[] argumentStrings = Arrays.copyOfRange(args, 2, args.length);
+            InvocationTarget target = new InvocationTarget("none", className, methodName, args);
+            parseTargetExceptionally(gson, target);
+
             List<InvocationTarget> targets = new LinkedList<InvocationTarget>();
             targets.add(target);
 
