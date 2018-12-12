@@ -32,7 +32,7 @@ class Driver
       exit -1
     end
     logger.debug "Using #{@driver_dir} as driver directory ..."
-    @cmd_stub = "cd #{@driver_dir}; export CLASSPATH=#{@driver_dir}/od.zip; app_process /system/bin #{DRIVER_CLASS}"
+    @cmd_stub = "cd #{@driver_dir}; app_process -Djava.class.path=#{@driver_dir}/od.zip /system/bin #{DRIVER_CLASS}"
 
     @cache = {}
   end
@@ -166,7 +166,9 @@ class Driver
     begin
       status = Timeout.timeout(@timeout) do
         if silent
-          Open3.popen3(cmd) { |_, stdout, stderr, _| [stdout.read, stderr.read] }
+          Open3.popen3(cmd) { |_, stdout, stderr, _|
+            [stdout.read, stderr.read]
+          }
         else
           [`#{cmd}`, '']
         end
@@ -210,7 +212,7 @@ class Driver
     # The driver writes any actual exceptions to the filesystem
     # Need to check to make sure the output value is legitimate
     logger.debug('Checking if execution had any exceptions ...')
-    exception = adb("shell cat #{@driver_dir}/od-exception.txt").strip
+    exception = adb_with_stderr("shell cat #{@driver_dir}/od-exception.txt")[1].strip
     unless exception.end_with?('No such file or directory')
       adb("shell rm #{@driver_dir}/od-exception.txt")
       raise exception
@@ -230,7 +232,7 @@ class Driver
 
   def adb_with_stderr(cmd)
     full_cmd = @adb_base % cmd
-    stdout, stderr = exec(full_cmd, false)
+    stdout, stderr = exec(full_cmd, true)
     [stdout.rstrip, stderr.rstrip]
   end
 
