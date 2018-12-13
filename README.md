@@ -24,8 +24,8 @@ Since you're an elite Android reverser, I'm sure you already have Smali and Baks
 
 ```bash
 mkdir ~/bin || cd ~/bin
-curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/smali-2.2.4.jar && mv smali-*.jar smali.jar
-curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.2.4.jar && mv baksmali-*.jar baksmali.jar
+curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/smali-2.2.5.jar && mv smali-*.jar smali.jar
+curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.2.5.jar && mv baksmali-*.jar baksmali.jar
 curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/smali
 curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali
 chmod +x ./smali ./baksmali
@@ -53,9 +53,9 @@ bundle install
 
 ### Step 4. Connect a Device or Emulator
 
-_You must have either an emulator running or a device plugged in for Oracle to work. The minimum required android version is 5.0!_
+_You must have either an emulator running or a device plugged in for Oracle to work. The minimum required Android version is 5.0!_
 
-Oracle needs to execute  methods on an live Android system. This can either be on a device or an emulator (preferred). If it's a device, _make sure you don't mind running potentially hostile code on it_.
+Oracle needs to execute methods on an live Android system. This can either be on a device or an emulator (preferred). If it's a device, _make sure you don't mind running potentially hostile code on it_.
 
 If you'd like to use an emulator, and already have the Android SDK installed, you can create and start emulator images with:
 

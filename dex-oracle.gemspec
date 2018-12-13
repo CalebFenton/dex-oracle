@@ -5,7 +5,7 @@ require 'dex-oracle/version'
 Gem::Specification.new do |s|
   s.name     = 'dex-oracle'
   s.version  = DexOracle::VERSION.dup
-  s.date     = '2015-11-28'
+  s.date     = '2018-12-13'
   s.license = 'MIT'
   s.summary  = 'Pattern based Dalvik deobfuscator'
   s.email    = 'calebjfenton@gmail.com'
@@ -22,7 +22,7 @@ EOF
     [:development, 'rspec-mocks', '~> 3.4', '>= 3.4.0'],
   ]
 
-  exclude_files = Dir['driver/build/**/*'] + Dir['driver/bin/**/*'] + Dir['sandbox/**/*'] + %w(driver/build driver/bin sandbox)
+  exclude_files = Dir['driver/{build,bin}/**/*'] + Dir['sandbox/**/*'] + Dir['coverage/**/*'] + Dir['docker/**/*'] + %w(driver/build driver/bin sandbox coverage docker .dockerignore)
   s.files         = Dir['**/*'] - exclude_files
   s.test_files    = Dir['test/**/*'] + Dir['spec/**/*']
   s.executables   = Dir['bin/*'].map { |f| File.basename(f) }
