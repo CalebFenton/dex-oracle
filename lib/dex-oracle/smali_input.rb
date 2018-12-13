@@ -1,6 +1,7 @@
 require 'zip'
 require 'English'
 require_relative 'utility'
+require_relative 'logging'
 
 class SmaliInput
   attr_reader :dir, :out_apk, :out_dex, :temp_dir, :temp_dex
