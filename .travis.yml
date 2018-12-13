@@ -1,7 +1,13 @@
+env:
+  global:
+    - CC_TEST_REPORTER_ID=333fce48233f0f608d146f7855e78bf449200c0aaeab76cbd50fa440c323e943
 language: ruby
 rvm:
-  - 2.3.0
+  - 2.5.3
 before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
   - mkdir bin-test && cd bin-test
   - curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/smali-2.2.5.jar && mv smali-*.jar smali.jar
   - curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.2.5.jar && mv baksmali-*.jar baksmali.jar
@@ -10,4 +16,7 @@ before_script:
   - chmod +x ./smali ./baksmali
   - export PATH=$PATH:$PWD
   - cd ..
-script: bundle exec rspec && bundle exec codeclimate-test-reporter
+script:
+  - bundle exec rspec
+after_script:
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
