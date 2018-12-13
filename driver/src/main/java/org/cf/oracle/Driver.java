@@ -65,7 +65,7 @@ public class Driver {
         System.exit(-1);
     }
 
-    private static String invokeMethod(Method method, Object[] arguments) throws IOException, IllegalAccessException,
+    private static String invokeMethod(Method method, Object[] arguments) throws IllegalAccessException,
                     IllegalArgumentException, InvocationTargetException {
         method.setAccessible(true);
         Object returnObject = method.invoke(null, arguments);
@@ -116,7 +116,7 @@ public class Driver {
             InvocationTarget target = targets.get(0);
             try {
                 output = invokeMethod(target.getMethod(), target.getArguments());
-            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | IOException e) {
+            } catch (Exception e) {
                 die("Error executing " + target, e);
             }
 
@@ -134,7 +134,8 @@ public class Driver {
                     try {
                         output = invokeMethod(target.getMethod(), target.getArguments());
                         status = "success";
-                    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | IOException e) {
+                    //} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NullPointerException e) {
+                    } catch (Exception e) {
                         output = "Error executing " + target;
                         status = "failure";
                     }
