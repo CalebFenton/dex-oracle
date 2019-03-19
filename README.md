@@ -23,7 +23,7 @@ _md5: 2dd2eeeda08ac8c15be8a9f2d01adbe8_
 Since you're an elite Android reverser, I'm sure you already have Smali and Baksmali on your path. If for some strange reason it's not already installed, this should get you started, but please examine it carefully before running:
 
 ```bash
-mkdir ~/bin || cd ~/bin
+mkdir ~/bin && cd ~/bin || cd ~/bin
 curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/smali-2.2.6.jar && mv smali-*.jar smali.jar
 curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.2.6.jar && mv baksmali-*.jar baksmali.jar
 curl --location -O https://bitbucket.org/JesusFreke/smali/downloads/smali
